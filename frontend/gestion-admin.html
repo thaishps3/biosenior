@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Admin</title>
+
+    <link rel="stylesheet" href="css/hub.css">
+    <link rel="stylesheet" href="gestion-admin/css/styles.css">
+</head>
+
+<body>
+
+    <div class="gestion-wrap">
+        <div class="gestion-card">
+
+            <header class="gestion-header">
+                <div>
+                    <h1>Gestión Admin</h1>
+                    <p>Residentes, usuarios y backups</p>
+                </div>
+
+                <div class="gestion-sesion" id="gestionSesion"></div>
+            </header>
+
+            <main class="gestion-body">
+
+               <section class="gestion-section">
+    <h2>Residentes</h2>
+    <p class="section-desc">Alta, revisión y mantenimiento de residentes.</p>
+
+    <details class="form-details">
+        <summary>Registrar residente</summary>
+
+        <div class="form-admin form-residente">
+            <input type="text" id="residenteNombre" placeholder="Nombre completo">
+
+            <div class="form-grid-2">
+                <select id="residenteGenero">
+                    <option value="">Género</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="masculino">Masculino</option>
+                </select>
+
+                <input type="text" id="residenteHabitacion" placeholder="Habitación">
+            </div>
+
+            <div class="form-grid-2">
+                <select id="residenteMovilidad">
+                    <option value="">Movilidad</option>
+                    <option value="Camina">Camina</option>
+                    <option value="Andador">Andador</option>
+                    <option value="Silla de ruedas">Silla de ruedas</option>
+                    <option value="Encamado">Encamado</option>
+                </select>
+
+                <select id="residenteCognitivo">
+                    <option value="">Condición cognitiva</option>
+                    <option value="Orientado">Orientado</option>
+                    <option value="Desorientación leve">Desorientación leve</option>
+                    <option value="Deterioro cognitivo">Deterioro cognitivo</option>
+                    <option value="Demencia avanzada">Demencia avanzada</option>
+                </select>
+            </div>
+
+            <select id="residenteAlimentacion">
+                <option value="">Tipo de alimentación</option>
+                <option value="Normal">Normal</option>
+                <option value="Fácil masticación">Fácil masticación</option>
+                <option value="Triturada">Triturada</option>
+                <option value="Espesantes">Espesantes</option>
+                <option value="Sonda">Sonda</option>
+            </select>
+
+            <p class="form-subtitle">Otra valoración:</p>
+
+<div class="checks-admin">
+    <label><input type="checkbox" id="residenteAyudaComer"> Ayuda para comer</label>
+    <label><input type="checkbox" id="residenteRiesgoCaida"> Riesgo de caída</label>
+    <label><input type="checkbox" id="residenteRiesgoAtragantamiento"> Riesgo de atragantamiento</label>
+    <label><input type="checkbox" id="residenteSupervision"> Requiere supervisión</label>
+</div>
+
+            <textarea id="residenteObservaciones" rows="3" placeholder="Observaciones generales..."></textarea>
+
+            <button id="btnGuardarResidente" class="btn-principal" type="button" onclick="guardarResidenteAdmin()">
+                Guardar residente
+            </button>
+        </div>
+    </details>
+
+    <div id="listaResidentes" class="lista-admin">
+        Cargando residentes...
+    </div>
+</section>
+
+                <section class="gestion-section">
+    <h2>Usuarios de la app</h2>
+    <p class="section-desc">Auxiliares, administradores y permisos.</p>
+
+    <details class="form-details">
+        <summary>Registrar usuario</summary>
+
+        <div class="form-admin">
+            <input type="text" id="usuarioNombre" placeholder="Nombre completo">
+
+            <div class="form-grid-2">
+                <select id="usuarioRol">
+                    <option value="">Rol</option>
+                    <option value="auxiliar">Auxiliar</option>
+                    <option value="admin">Administrador</option>
+                </select>
+
+                <input type="password" id="usuarioPin" placeholder="PIN de 4 dígitos" maxlength="4">
+            </div>
+
+            <button id="btnGuardarUsuario" class="btn-principal" type="button" onclick="guardarUsuarioAdmin()">
+                Guardar usuario
+            </button>
+        </div>
+    </details>
+
+    <div id="listaUsuariosApp" class="lista-admin">
+        Cargando usuarios...
+    </div>
+</section>
+
+                <section class="gestion-section">
+                    <h2>Backup</h2>
+                    <p class="section-desc">Exportar o restaurar datos del servidor para pruebas y respaldo.</p>
+
+                    <div class="backup-actions">
+                        <button class="btn-backup-admin btn-exportar" type="button" onclick="exportarBackup()">
+                            📤 Exportar backup
+                        </button>
+
+                        <button class="btn-backup-admin btn-importar" type="button"
+                            onclick="document.getElementById('inputBackup').click()">
+                            📥 Importar backup
+                        </button>
+                    </div>
+
+                    <input type="file" id="inputBackup" accept=".json,application/json" style="display:none"
+                        onchange="importarBackup(event)">
+                </section>
+            </main>
+
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="gestion-admin/js/app.js"></script>
+</body>
+
+</html>

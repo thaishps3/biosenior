@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const pool = require("./db/connection");
@@ -7,6 +8,8 @@ const pool = require("./db/connection");
 const residenteRoutes = require("./routes/residente.routes");
 const deposicionRoutes = require("./routes/deposicion.routes");
 const planningRoutes = require("./routes/planning.routes");
+const usuarioRoutes = require("./routes/usuario.routes");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -14,10 +17,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Servir frontend
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+
 // Rutas API
 app.use("/api/residentes", residenteRoutes);
 app.use("/api/deposiciones", deposicionRoutes);
 app.use("/api/planning", planningRoutes);
+app.use("/api/usuarios", usuarioRoutes);
+
 app.get("/", (req, res) => {
     res.send("Servidor Control Bio-Senior funcionando");
 });
