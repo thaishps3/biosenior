@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control Bio-Senior Pro</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+    <link rel="stylesheet" href="biosenior/css/styles.css">
+    <link rel="stylesheet" href="css/hub.css">
+</head>
+
+<body>
+
+    <!-- Sesión verificada por auth.js desde el hub -->
+
+    <div id="pantallaApp">
+
+        <div class="toast" id="toast"></div>
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box">
+                <p id="modalMsg">¿Estás seguro?</p>
+                <div class="modal-btns">
+                    <button class="modal-cancel" onclick="cerrarModal()">Cancelar</button>
+                    <button class="modal-confirm" id="modalConfirmBtn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="print-header" style="display:none;">
+                <h1 style="margin:0; color:#0f7b8c;">Reporte Bio-Senior</h1>
+                <p id="print-date-sub" style="margin:5px 0; font-weight:bold;"></p>
+                <p id="print-user-sub" style="margin:5px 0;"></p>
+                <p id="print-auxiliar-sub" style="margin:5px 0; color:#627690;"></p>
+            </div>
+
+            <div class="main-title no-print" id="mainTitle">
+                Control Bio-Senior
+                <div class="sesion-bar" id="sesionBar"></div>
+            </div>
+
+            <div id="bloqueAdmin" style="display:none;">
+                <button type="button" class="collapsible no-print" id="btnCollapsible">
+                    <span>⚙️ Gestión</span><span id="arrow">▼</span>
+                </button>
+                <div class="content-admin no-print" id="contentAdmin">
+                    <div style="padding:15px; background:#f8f9fa;">
+                        <label style="margin-top:0;">Añadir residente:</label>
+                        <input type="text" id="nuevoNombre" placeholder="Nombre del residente...">
+                        <div style="display:flex; gap:10px; margin:10px 0;">
+                            <div id="genH" class="btn-o" style="flex:1" onclick="selectGenAdmin('Hombre', this)">♂️
+                                Hombre</div>
+                            <div id="genM" class="btn-o" style="flex:1" onclick="selectGenAdmin('Mujer', this)">♀️ Mujer
+                            </div>
+                        </div>
+                        <button onclick="agregarUsuario()"
+                            style="width:100%; background:var(--blue); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold;">Guardar
+                            residente</button>
+                        <p class="label-pequena" style="margin-top:15px;">Lista de residentes:</p>
+                        <div id="gestionLista"
+                            style="max-height:100px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:6px; background:white; font-size:13px;">
+                        </div>
+
+                        <hr style="border:none; border-top:1px solid #eee; margin:15px 0;">
+                        <label>Añadir auxiliar:</label>
+                        <input type="text" id="nuevoAuxiliarNombre" placeholder="Nombre del auxiliar...">
+                        <div style="display:flex; gap:10px; margin:10px 0;">
+                            <div id="rolAux" class="btn-o" style="flex:1" onclick="selectRolAux('auxiliar', this)">👩
+                                Auxiliar</div>
+                            <div id="rolAdm" class="btn-o" style="flex:1" onclick="selectRolAux('admin', this)">👩‍💼
+                                Admin</div>
+                        </div>
+                        <input type="number" id="nuevoAuxiliarPin" placeholder="PIN de 4 dígitos..." maxlength="4"
+                            style="margin-bottom:8px;">
+                        <button onclick="agregarAuxiliar()"
+                            style="width:100%; background:var(--blue); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold;">Guardar
+                            auxiliar</button>
+                        <p class="label-pequena" style="margin-top:15px;">Lista de auxiliares:</p>
+                        <div id="gestionAuxiliares"
+                            style="max-height:100px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:6px; background:white; font-size:13px;">
+                        </div>
+
+                        <hr style="border:none; border-top:1px solid #eee; margin:15px 0;">
+                        <p class="label-pequena">📋 Backup clínico (residentes + registros):</p>
+                        <div class="backup-section">
+                            <button class="btn-backup" onclick="exportarDatos()">📤 Exportar</button>
+                            <button class="btn-backup" onclick="document.getElementById('importFile').click()">📥
+                                Importar</button>
+                            <input type="file" id="importFile" style="display:none" onchange="importarDatos(event)">
+                        </div>
+
+                        <p class="label-pequena" style="margin-top:12px;">🔐 Backup de cuentas (auxiliares + admins):
+                        </p>
+                        <div class="backup-section">
+                            <button class="btn-backup" onclick="exportarCuentas()">📤 Exportar</button>
+                            <button class="btn-backup" onclick="document.getElementById('importCuentas').click()">📥
+                                Importar</button>
+                            <input type="file" id="importCuentas" style="display:none"
+                                onchange="importarCuentas(event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="no-print">
+                <div id="bloqueAlertas" style="display:none;"></div>
+
+                <!-- Solo visible para auxiliares -->
+                <div id="bloqueRegistro">
+                    <label>1. Seleccionar residente</label>
+                    <div class="abc-bar" id="abcBar"></div>
+                    <div id="listaUsuarios"></div>
+                    <label>2. Tipo de Deposición</label>
+                    <div class="grid-opts" id="depoSection">
+                        <div class="btn-o" onclick="selectDepo('Normal', this)">🌭 Normal</div>
+                        <div class="btn-o" onclick="selectDepo('Blanda', this)">☁️ Blanda</div>
+                        <div class="btn-o" onclick="selectDepo('Pastosa', this)">💩 Pastosa</div>
+                        <div class="btn-o" onclick="selectDepo('Líquida', this)">💧 Líquida</div>
+                        <div class="btn-o" onclick="selectDepo('Estreñida', this)">🪨 Estreñida</div>
+                        <div class="btn-o" onclick="selectDepo('No', this)">❌ No</div>
+                    </div>
+                    <label>3. Micción</label>
+                    <div class="grid-opts" id="micSection">
+                        <div class="btn-o" id="micSi" onclick="selectMic('Sí', this)">✅ Sí</div>
+                        <div class="btn-o" id="micNo" onclick="selectMic('No', this)">❌ No</div>
+                    </div>
+                    <div class="obs-toggle" onclick="toggleObs()">
+                        <span id="obsArrow">▶</span> Añadir observación
+                    </div>
+                    <textarea id="obs" rows="2" placeholder="Notas adicionales..." style="display:none;"></textarea>
+                    <button class="btn-save" onclick="guardar()">💾 GUARDAR REGISTRO</button>
+                </div>
+            </div>
+
+
+
+            <div class="no-print">
+                <div class="hist-toggle" id="histToggle" onclick="toggleHistorial()">
+                    <div>
+                        <div class="hist-toggle-title">📋 Historial completo</div>
+                        <div class="hist-toggle-sub" id="histSubtitle">Filtrar, analizar e imprimir</div>
+                    </div>
+                    <span class="hist-arrow" id="histArrow">▼</span>
+                </div>
+                <div class="hist-content" id="histContent">
+                    <div class="filtros-card" style="border-radius:0 0 10px 10px; border-top:none; margin-bottom:0;">
+                        <p class="filtro-label">¿Qué quieres ver?</p>
+                        <div class="tag-row" id="tagFecha">
+                            <button class="tag-btn act-blue" onclick="selFiltroFecha('hoy', this)">Hoy</button>
+                            <button class="tag-btn" onclick="selFiltroFecha('ayer', this)">Ayer</button>
+                            <button class="tag-btn" onclick="selFiltroFecha('semana', this)">Esta semana</button>
+                            <button class="tag-btn" onclick="selFiltroFecha('todo', this)">Todo</button>
+                        </div>
+                      <p class="filtro-label">¿De quién?</p>
+
+<div class="quien-fila" id="quienGrid">
+    <button class="quien-icono act" onclick="selQuien('todos', this, 'act')">
+        👥<span class="quien-icono-label">Todos</span>
+    </button>
+
+    <button class="quien-icono" onclick="selQuien('Hombre', this, 'act-teal')">
+        👨‍🦳<span class="quien-icono-label">Hombres</span>
+    </button>
+
+    <button class="quien-icono" onclick="selQuien('Mujer', this, 'act-pink')">
+        👩‍🦳<span class="quien-icono-label">Mujeres</span>
+    </button>
+
+    <div class="select-residente-boton">
+    <span class="select-residente-icono">🧓</span>
+
+    <select id="filtroUsuario" class="select-residente-inline" onchange="selUsuarioConcreto()">
+        <option value="">Residente</option>
+    </select>
+</div>
+</div>
+
+                       <div class="filtros-dobles">
+    <div class="filtro-mini">
+        <p class="filtro-label">Turno</p>
+        <select id="filtroTurno" class="select-filtro" onchange="selTurnoSelect()">
+            <option value="todos">Todos</option>
+            <option value="Mañana">Mañana</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noche">Noche</option>
+        </select>
+    </div>
+
+    <div class="filtro-mini">
+        <p class="filtro-label">Deposición</p>
+        <select id="filtroDeposicion" class="select-filtro" onchange="selDeposicionSelect()">
+            <option value="todas">Todas</option>
+            <option value="No">Sin deposición</option>
+            <option value="Normal">Normal</option>
+            <option value="Blanda">Blanda</option>
+            <option value="Pastosa">Pastosa</option>
+            <option value="Líquida">Líquida</option>
+            <option value="Estreñida">Estreñida</option>
+        </select>
+    </div>
+</div>
+                        <hr style="border:none; border-top:0.5px solid #dde4ea; margin:10px 0;">
+                        <p id="subtituloHistorial" style="font-size:11px; color:#4a7a8a; margin:0 0 10px;"></p>
+                        <div class="tabla-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Hora</th>
+                                        <th>Residente</th>
+                                        <th>Auxiliar</th>
+                                        <th>Turno</th>
+                                        <th>Depo</th>
+                                        <th>Mic</th>
+                                        <th>Obs</th>
+                                        <th class="no-print"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpo"></tbody>
+                            </table>
+                        </div>
+
+                        <hr style="border:none; border-top:0.5px solid #dde4ea; margin:10px 0;">
+                        <button onclick="prepararImpresion()"
+                            style="width:100%; padding:10px; background:var(--gray); color:white; border:none; border-radius:8px; font-size:13px; font-weight:bold; cursor:pointer;">🖨️
+                            Imprimir</button>
+                    </div>
+                </div>
+            </div>
+
+            <input type="date" id="filtro" style="display:none;">
+            <input type="hidden" id="filtroGenero" value="">
+            <footer>Diseño funcional por Thais Perruolo &copy; 2026</footer>
+        </div>
+
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="biosenior/js/app.js"></script>
+</body>
+
+</html>

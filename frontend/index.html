@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Residencial SantGervasiParc</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <link rel="stylesheet" href="css/hub.css">
+</head>
+<body>
+
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="img/Logo-SGP-blanc.png" alt="Residencial SantGervasiParc" class="login-logo">
+            <p class="login-sub">Identifícate para continuar</p>
+        </div>
+        <div class="login-body">
+            <p class="login-label">¿Quién eres?</p>
+            <select id="loginSelect"></select>
+
+            <p class="login-label" style="margin-top:16px;">Tu PIN</p>
+            <div class="pin-display">
+                <div class="pin-dot" id="dot0"></div>
+                <div class="pin-dot" id="dot1"></div>
+                <div class="pin-dot" id="dot2"></div>
+                <div class="pin-dot" id="dot3"></div>
+            </div>
+            <p class="pin-error" id="pinError"></p>
+            <div class="pin-grid">
+                <button class="pin-btn" onclick="pinPress('1')">1</button>
+                <button class="pin-btn" onclick="pinPress('2')">2</button>
+                <button class="pin-btn" onclick="pinPress('3')">3</button>
+                <button class="pin-btn" onclick="pinPress('4')">4</button>
+                <button class="pin-btn" onclick="pinPress('5')">5</button>
+                <button class="pin-btn" onclick="pinPress('6')">6</button>
+                <button class="pin-btn" onclick="pinPress('7')">7</button>
+                <button class="pin-btn" onclick="pinPress('8')">8</button>
+                <button class="pin-btn" onclick="pinPress('9')">9</button>
+                <button class="pin-btn pin-empty"></button>
+                <button class="pin-btn" onclick="pinPress('0')">0</button>
+                <button class="pin-btn pin-del" onclick="pinDel()">⌫</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Si ya hay sesión activa, ir directo al hub
+        if (auth.sesion) { window.location.href = 'menu-principal.html'; return; }
+        renderLoginSelect();
+    });
+</script>
+</body>
+</html>

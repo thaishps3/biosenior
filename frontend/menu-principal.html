@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Residencial SantGervasiParc</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <link rel="stylesheet" href="css/hub.css">
+</head>
+
+<body>
+
+    <div class="hub-wrap">
+        <div class="hub-card">
+
+            <div class="hub-header">
+                <img src="img/Logo-SGP-blanc.png" alt="Residencial SantGervasiParc" class="hub-logo">
+                <div class="hub-sesion" id="hubSesion"></div>
+            </div>
+
+            <div class="hub-body">
+                <p class="hub-label">Módulos disponibles</p>
+                <div class="app-grid" id="appGrid"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!auth.verificarSesion('index.html')) return;
+
+            const s = auth.sesion;
+            const rolLabel = s.rol === 'admin' ? 'Admin' : 'Auxiliar';
+            const rolColor = s.rol === 'admin' ? 'background:#fef3e2;color:#7a4a00' : 'background:#e6f4f6;color:#0a5a68';
+
+            document.getElementById('hubSesion').innerHTML = `
+            <span class="hub-nombre">${s.nombre}</span>
+            <span class="hub-rol" style="${rolColor}">${rolLabel}</span>
+            <button class="hub-salir" onclick="auth.cerrarSesion('index.html')">Salir</button>`;
+
+            const modulos = [
+                {
+                    nombre: 'Bio-Senior',
+                    desc: 'Control de deposiciones y micción',
+                    icon: '🩺',
+                    url: 'biosenior.html',
+                    roles: ['admin', 'auxiliar']
+                },
+                {
+                    nombre: 'Planning',
+                    desc: 'Control de cuidados y turno activo',
+                    icon: '🏥',
+                    url: 'planning.html',
+                    roles: ['admin', 'auxiliar']
+                },
+
+                {
+                    nombre: 'Comedor',
+                    desc: 'Mapa de mesas y ubicación de residentes',
+                    icon: '🍽️',
+                    url: 'comedor.html',
+                    roles: ['admin', 'auxiliar']
+                },
+                {
+                    nombre: 'Alimentación',
+                    desc: 'Tipos de dieta y asignación por residente',
+                    icon: '🥗',
+                    url: 'alimentacion.html',
+                    roles: ['admin', 'auxiliar']
+                },
+
+                {
+                    nombre: 'Tablón',
+                    desc: 'Anuncios, imágenes y comunicados internos',
+                    icon: '📌',
+                    url: '#',
+                    roles: ['admin', 'auxiliar'],
+                    estado: 'pendiente'
+                },
+                {
+                    nombre: 'Parte del día',
+                    desc: 'Resumen operativo por turno',
+                    icon: '📝',
+                    url: '#',
+                    roles: ['admin', 'auxiliar'],
+                    estado: 'pendiente'
+                },
+                {
+                    nombre: 'Chat interno',
+                    desc: 'Mensajes internos del equipo',
+                    icon: '💬',
+                    url: '#',
+                    roles: ['admin', 'auxiliar'],
+                    estado: 'pendiente'
+                },
+                {
+                    nombre: 'Gestión Admin',
+                    desc: 'Residentes, usuarios y backups',
+                    icon: '⚙️',
+                    url: 'gestion-admin.html',
+                    roles: ['admin']
+                }
+            ];
+
+            const grid = document.getElementById('appGrid');
+            const modulosVisibles = modulos.filter(m => m.roles.includes(s.rol));
+
+      grid.innerHTML = modulosVisibles.map(m => {
+    const pendiente = m.estado === 'pendiente';
+
+    return `
+        <div class="app-card ${pendiente ? 'disabled' : ''}"
+             ${pendiente ? '' : `onclick="window.location.href='${m.url}'"`}>
+            <span class="app-icon">${m.icon}</span>
+            <span class="app-name">${m.nombre}</span>
+            <span class="app-desc">${m.desc}</span>
+            ${pendiente ? '<span class="app-lock">Próximamente</span>' : ''}
+        </div>
+    `;
+}).join('');
+        });
+    </script>
+</body>
+
+</html>
