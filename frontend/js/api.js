@@ -118,6 +118,10 @@ const api = {
         return apiPost("/deposiciones", datos);
     },
 
+eliminarDeposicion(id) {
+    return apiDelete(`/deposiciones/${id}`);
+},
+
     obtenerTiposDeposicion() {
         return apiGet("/deposiciones/tipos");
     },
