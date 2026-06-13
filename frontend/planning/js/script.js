@@ -226,39 +226,42 @@ function aplicarPermisosPorRol() {
 //
 // Qué hace:
 // - Crea selector Mañana/Tarde/Noche.
-// - Al cambiar turno, refresca las listas.
-// - Siesta no aparece en este selector porque queda fuera.
+// - Lo coloca cerca de los botones de planes.
+// - Refuerza visualmente la lógica: Turno + Plan.
+// - Siesta no aparece porque queda fuera de Planning.
 // ============================================================
 
 function crearSelectorTurnoSiNoExiste() {
   if (document.getElementById("turnoSelect")) return;
 
-  const headerRight = document.querySelector(".header-right");
-  if (!headerRight) return;
+  const tabs = document.querySelector(".tabs");
+  if (!tabs) return;
 
-  const select = document.createElement("select");
+  const contenedor = document.createElement("section");
+  contenedor.className = "planning-context-bar";
 
-  select.id = "turnoSelect";
-  select.style.marginTop = "8px";
-  select.style.padding = "8px";
-  select.style.borderRadius = "8px";
-  select.style.border = "1px solid #dde4ea";
+  contenedor.innerHTML = `
+    <label for="turnoSelect" class="planning-context-label">
+      Turno
+    </label>
 
-  select.innerHTML = `
-    <option value="Mañana">Mañana</option>
-    <option value="Tarde">Tarde</option>
-    <option value="Noche">Noche</option>
+    <select id="turnoSelect" class="turno-select">
+      <option value="Mañana">Mañana</option>
+      <option value="Tarde">Tarde</option>
+      <option value="Noche">Noche</option>
+    </select>
   `;
+
+  tabs.parentNode.insertBefore(contenedor, tabs);
+
+  const select = document.getElementById("turnoSelect");
 
   select.addEventListener("change", () => {
     currentTurno = select.value;
     resetForm();
     render();
   });
-
-  headerRight.appendChild(select);
 }
-
 
 // ============================================================
 // BLOQUE: Formulario admin de asignación
@@ -388,7 +391,7 @@ function renderBotonesPlanes() {
     boton.type = "button";
     boton.className = "tab-btn";
     boton.dataset.plan = plan.letra;
-    boton.innerText = plan.letra === "ALT" ? "Alterno" : plan.letra;
+    boton.innerText = plan.letra === "ALT" ? "Alt" : plan.letra;
 
     boton.addEventListener("click", () => {
       setPlan(plan.letra);

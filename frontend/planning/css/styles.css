@@ -222,8 +222,19 @@ table {
 
 /* ── TABS DE PLAN ─────────────────────────────────────────── */
 
+/* ============================================================
+   BLOQUE: Botones de planes mobile first
+
+   Qué hace:
+   - Mantiene los planes compactos.
+   - Permite que A, B, C, D y Alt entren mejor en móvil.
+   - Mantiene la barra visible al hacer scroll.
+   - Evita duplicidad de estilos entre grid y flex.
+   ============================================================ */
+
 .tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   margin-bottom: 14px;
   position: sticky;
@@ -234,13 +245,13 @@ table {
 }
 
 .tab-btn {
-  flex: 1;
-  padding: 14px 5px;
+  min-height: 42px;
+  padding: 8px 6px;
   border: none;
   background: #d1e4e8;
   border-radius: 10px;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   color: var(--muted);
   transition: all 0.2s;
@@ -250,6 +261,43 @@ table {
   background: var(--primary);
   color: white;
   box-shadow: 0 4px 10px rgba(15, 123, 140, 0.35);
+}
+
+
+/* ============================================================
+   BLOQUE: Barra de contexto Turno + Plan
+
+   Qué hace:
+   - Agrupa visualmente el selector de turno con los planes.
+   - Refuerza la lógica funcional: Turno + Plan.
+   - Prioriza diseño mobile first.
+   ============================================================ */
+
+.planning-context-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 8px;
+}
+
+.planning-context-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.turno-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* ── COLLAPSIBLE ──────────────────────────────────────────── */
