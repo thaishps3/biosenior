@@ -1,231 +1,411 @@
+// ============================================================
+// ARCHIVO: planning.controller.js
+// Controlador del módulo Planning.
+//
+// Qué hace:
+// - Recibe las peticiones HTTP del frontend.
+// - Valida datos obligatorios antes de llamar al modelo.
+// - Devuelve respuestas claras al frontend.
+// - Traduce errores de PostgreSQL a mensajes comprensibles.
+// ============================================================
+
 const PlanningModel = require("../models/planning.model");
 
-// ─────────────────────────────────────────────
-// PLANES
-// ─────────────────────────────────────────────
+// ============================================================
+// BLOQUE: Validaciones generales del Planning
+//
+// Qué hace:
+// - Centraliza validaciones simples usadas por varias funciones.
+// - Evita repetir listas de turnos permitidos en cada endpoint.
+// ============================================================
+
+const TURNOS_VALIDOS = ["Mañana", "Tarde", "Noche"];
+
+function esTurnoValido(turno) {
+  return TURNOS_VALIDOS.includes(turno);
+}
+
+// ============================================================
+// BLOQUE: Listar planes
+//
+// Qué hace:
+// - Devuelve los planes activos del Planning.
+// - Incluye A, B, C, D y Alterno.
+// ============================================================
 
 async function listarPlanes(req, res) {
-    try {
-        const planes = await PlanningModel.obtenerPlanes();
-        res.json(planes);
-    } catch (error) {
-        console.error("Error al obtener planes:", error);
-        res.status(500).json({
-            mensaje: "Error al obtener planes"
-        });
-    }
+  try {
+    const planes = await PlanningModel.obtenerPlanes();
+    res.json(planes);
+  } catch (error) {
+    console.error("Error al obtener planes:", error);
+    res.status(500).json({ mensaje: "Error al obtener planes" });
+  }
 }
 
-// ─────────────────────────────────────────────
-// RESIDENTES POR PLAN
-// ─────────────────────────────────────────────
+// ============================================================
+// BLOQUE: Listar residentes asignados al Planning
+//
+// Qué hace:
+// - Devuelve residentes asignados a planes.
+// - Permite filtrar por plan y/o turno usando query params.
+// - Ejemplos:
+//   /api/planning/plan-residentes
+//   /api/planning/plan-residentes?id_plan=1
+//   /api/planning/plan-residentes?turno=Tarde
+//   /api/planning/plan-residentes?id_plan=1&turno=Tarde
+// ============================================================
 
 async function listarPlanResidentes(req, res) {
-    try {
-        const residentes = await PlanningModel.obtenerPlanResidentes();
-        res.json(residentes);
-    } catch (error) {
-        console.error("Error al obtener residentes del planning:", error);
-        res.status(500).json({
-            mensaje: "Error al obtener residentes del planning"
-        });
+  try {
+    const { id_plan, turno } = req.query;
+
+    if (turno && !esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
     }
+
+    const residentes = await PlanningModel.obtenerPlanResidentes({
+      id_plan: id_plan || null,
+      turno: turno || null
+    });
+
+    res.json(residentes);
+  } catch (error) {
+    console.error("Error al obtener residentes del planning:", error);
+    res.status(500).json({
+      mensaje: "Error al obtener residentes del planning"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Asignar residente a plan y turno
+//
+// Qué hace:
+// - Recibe id_plan, id_residente y turno desde el frontend.
+// - Comprueba que el turno sea válido.
+// - Antes de insertar, revisa si el residente ya está activo
+//   en otro plan dentro del mismo turno.
+// - Si ya existe, devuelve un mensaje claro para el admin.
+// ============================================================
 
 async function asignarResidenteAPlan(req, res) {
-    try {
-        const { id_plan, id_residente } = req.body;
+  try {
+    const { id_plan, id_residente, turno } = req.body;
 
-        if (!id_plan || !id_residente) {
-            return res.status(400).json({
-                mensaje: "Plan y residente son obligatorios"
-            });
-        }
-
-        const asignacion = await PlanningModel.asignarResidenteAPlan(req.body);
-        res.status(201).json(asignacion);
-    } catch (error) {
-        console.error("Error al asignar residente al plan:", error);
-
-        if (error.code === "23505") {
-            return res.status(409).json({
-                mensaje: "Este residente ya está asignado a ese plan"
-            });
-        }
-
-        res.status(500).json({
-            mensaje: "Error al asignar residente al plan"
-        });
+    if (!id_plan || !id_residente || !turno) {
+      return res.status(400).json({
+        mensaje: "Plan, residente y turno son obligatorios"
+      });
     }
+
+    if (!esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    const asignacionExistente =
+      await PlanningModel.obtenerAsignacionActivaPorResidenteTurno(
+        id_residente,
+        turno
+      );
+
+    if (asignacionExistente) {
+      return res.status(409).json({
+        mensaje: `Este residente ya pertenece al ${asignacionExistente.plan_nombre} en el turno ${turno}. Debe quitarlo primero antes de asignarlo a otro plan.`,
+        asignacion: asignacionExistente
+      });
+    }
+
+    const asignacion = await PlanningModel.asignarResidenteAPlan(req.body);
+    res.status(201).json(asignacion);
+  } catch (error) {
+    console.error("Error al asignar residente al plan:", error);
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        mensaje:
+          "Este residente ya está asignado a un plan activo dentro de ese turno."
+      });
+    }
+
+    res.status(500).json({
+      mensaje: "Error al asignar residente al plan"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Actualizar residente asignado al Planning
+//
+// Qué hace:
+// - Actualiza datos operativos del residente asignado.
+// - No cambia plan, residente ni turno.
+// - Sirve para editar orden, pañal, observación,
+//   riesgo, encamado o estado activo.
+// ============================================================
 
 async function actualizarPlanResidente(req, res) {
-    try {
-        const asignacion = await PlanningModel.actualizarPlanResidente(
-            req.params.id,
-            req.body
-        );
+  try {
+    const asignacion = await PlanningModel.actualizarPlanResidente(
+      req.params.id,
+      req.body
+    );
 
-        if (!asignacion) {
-            return res.status(404).json({
-                mensaje: "Asignación de residente no encontrada"
-            });
-        }
-
-        res.json(asignacion);
-    } catch (error) {
-        console.error("Error al actualizar residente del plan:", error);
-        res.status(500).json({
-            mensaje: "Error al actualizar residente del plan"
-        });
+    if (!asignacion) {
+      return res.status(404).json({
+        mensaje: "Asignación de residente no encontrada"
+      });
     }
+
+    res.json(asignacion);
+  } catch (error) {
+    console.error("Error al actualizar residente del plan:", error);
+    res.status(500).json({
+      mensaje: "Error al actualizar residente del plan"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Quitar residente del Planning
+//
+// Qué hace:
+// - Marca la asignación como inactiva.
+// - No borra físicamente la fila.
+// - Permite conservar trazabilidad y reasignar después.
+// ============================================================
 
 async function quitarResidenteDePlan(req, res) {
-    try {
-        const asignacion = await PlanningModel.quitarResidenteDePlan(req.params.id);
+  try {
+    const asignacion = await PlanningModel.quitarResidenteDePlan(req.params.id);
 
-        if (!asignacion) {
-            return res.status(404).json({
-                mensaje: "Asignación de residente no encontrada"
-            });
-        }
-
-        res.json({
-            mensaje: "Residente retirado del plan correctamente",
-            asignacion
-        });
-    } catch (error) {
-        console.error("Error al retirar residente del plan:", error);
-        res.status(500).json({
-            mensaje: "Error al retirar residente del plan"
-        });
+    if (!asignacion) {
+      return res.status(404).json({
+        mensaje: "Asignación de residente no encontrada"
+      });
     }
+
+    res.json({
+      mensaje: "Residente retirado del plan correctamente",
+      asignacion
+    });
+  } catch (error) {
+    console.error("Error al retirar residente del plan:", error);
+    res.status(500).json({
+      mensaje: "Error al retirar residente del plan"
+    });
+  }
 }
 
-// ─────────────────────────────────────────────
-// ASIGNACIONES DE PLAN A AUXILIAR POR TURNO
-// ─────────────────────────────────────────────
+// ============================================================
+// BLOQUE: Listar asignaciones de plan a auxiliar
+//
+// Qué hace:
+// - Devuelve qué auxiliar tiene asignado cada plan.
+// - La asignación depende de fecha + turno + plan.
+// ============================================================
 
 async function listarAsignacionesTurno(req, res) {
-    try {
-        const asignaciones = await PlanningModel.obtenerAsignacionesTurno();
-        res.json(asignaciones);
-    } catch (error) {
-        console.error("Error al obtener asignaciones de turno:", error);
-        res.status(500).json({
-            mensaje: "Error al obtener asignaciones de turno"
-        });
-    }
+  try {
+    const asignaciones = await PlanningModel.obtenerAsignacionesTurno();
+    res.json(asignaciones);
+  } catch (error) {
+    console.error("Error al obtener asignaciones de turno:", error);
+    res.status(500).json({
+      mensaje: "Error al obtener asignaciones de turno"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Crear asignación de plan a auxiliar
+//
+// Qué hace:
+// - Asigna un plan completo a una auxiliar.
+// - Valida plan, usuario y turno.
+// - PostgreSQL evita duplicar el mismo plan en la misma fecha y turno.
+// ============================================================
 
 async function crearAsignacionTurno(req, res) {
-    try {
-        const { id_plan, id_usuario, turno } = req.body;
+  try {
+    const { id_plan, id_usuario, turno } = req.body;
 
-        if (!id_plan || !id_usuario || !turno) {
-            return res.status(400).json({
-                mensaje: "Plan, usuario y turno son obligatorios"
-            });
-        }
-
-        const asignacion = await PlanningModel.crearAsignacionTurno(req.body);
-        res.status(201).json(asignacion);
-    } catch (error) {
-        console.error("Error al crear asignación de turno:", error);
-
-        if (error.code === "23505") {
-            return res.status(409).json({
-                mensaje: "Ya existe una asignación para ese plan, fecha y turno"
-            });
-        }
-
-        res.status(500).json({
-            mensaje: "Error al crear asignación de turno"
-        });
+    if (!id_plan || !id_usuario || !turno) {
+      return res.status(400).json({
+        mensaje: "Plan, usuario y turno son obligatorios"
+      });
     }
+
+    if (!esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    const asignacion = await PlanningModel.crearAsignacionTurno(req.body);
+    res.status(201).json(asignacion);
+  } catch (error) {
+    console.error("Error al crear asignación de turno:", error);
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        mensaje: "Ya existe una asignación para ese plan, fecha y turno"
+      });
+    }
+
+    res.status(500).json({
+      mensaje: "Error al crear asignación de turno"
+    });
+  }
 }
 
-// ─────────────────────────────────────────────
-// REGISTROS DIARIOS
-// ─────────────────────────────────────────────
+// ============================================================
+// BLOQUE: Listar registros diarios del Planning
+//
+// Qué hace:
+// - Devuelve historial de residentes atendidos.
+// - Incluye fecha, hora, turno, plan, residente y auxiliar.
+// ============================================================
 
 async function listarRegistros(req, res) {
-    try {
-        const registros = await PlanningModel.obtenerRegistros();
-        res.json(registros);
-    } catch (error) {
-        console.error("Error al obtener registros de planning:", error);
-        res.status(500).json({
-            mensaje: "Error al obtener registros de planning"
-        });
-    }
+  try {
+    const registros = await PlanningModel.obtenerRegistros();
+    res.json(registros);
+  } catch (error) {
+    console.error("Error al obtener registros de planning:", error);
+    res.status(500).json({
+      mensaje: "Error al obtener registros de planning"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Crear registro diario del Planning
+//
+// Qué hace:
+// - Marca un residente como atendido en un turno concreto.
+// - Valida plan, residente, usuario, turno y acción.
+// - La acción esperada es:
+//   Mañana -> levantar
+//   Tarde  -> atender
+//   Noche  -> acostar
+// ============================================================
 
 async function crearRegistro(req, res) {
-    try {
-        const {
-            id_plan,
-            id_residente,
-            id_usuario,
-            turno,
-            accion
-        } = req.body;
+  try {
+    const { id_plan, id_residente, id_usuario, turno, accion } = req.body;
 
-        if (!id_plan || !id_residente || !id_usuario || !turno || !accion) {
-            return res.status(400).json({
-                mensaje: "Plan, residente, usuario, turno y acción son obligatorios"
-            });
-        }
-
-        const registro = await PlanningModel.crearRegistro(req.body);
-        res.status(201).json(registro);
-    } catch (error) {
-        console.error("Error al crear registro de planning:", error);
-
-        if (error.code === "23505") {
-            return res.status(409).json({
-                mensaje: "Este residente ya fue registrado en ese turno"
-            });
-        }
-
-        res.status(500).json({
-            mensaje: "Error al crear registro de planning"
-        });
+    if (!id_plan || !id_residente || !id_usuario || !turno || !accion) {
+      return res.status(400).json({
+        mensaje: "Plan, residente, usuario, turno y acción son obligatorios"
+      });
     }
+
+    if (!esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    const registro = await PlanningModel.crearRegistro(req.body);
+    res.status(201).json(registro);
+  } catch (error) {
+    console.error("Error al crear registro de planning:", error);
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        mensaje: "Este residente ya fue registrado en ese turno"
+      });
+    }
+
+    res.status(500).json({
+      mensaje: "Error al crear registro de planning"
+    });
+  }
 }
+
+// ============================================================
+// BLOQUE: Actualizar registro diario
+//
+// Qué hace:
+// - Actualiza incidencia, observación o estado realizado.
+// - Lo usa el frontend cuando se añade una incidencia
+//   a un residente que ya estaba marcado como atendido.
+// ============================================================
+
+async function actualizarRegistro(req, res) {
+  try {
+    const registro = await PlanningModel.actualizarRegistro(
+      req.params.id,
+      req.body
+    );
+
+    if (!registro) {
+      return res.status(404).json({
+        mensaje: "Registro no encontrado"
+      });
+    }
+
+    res.json(registro);
+  } catch (error) {
+    console.error("Error al actualizar registro de planning:", error);
+    res.status(500).json({
+      mensaje: "Error al actualizar registro de planning"
+    });
+  }
+}
+
+// ============================================================
+// BLOQUE: Eliminar registro diario
+//
+// Qué hace:
+// - Borra un registro cuando se marcó por error.
+// - Devuelve mensaje claro al frontend.
+// ============================================================
 
 async function eliminarRegistro(req, res) {
-    try {
-        const registro = await PlanningModel.eliminarRegistro(req.params.id);
+  try {
+    const registro = await PlanningModel.eliminarRegistro(req.params.id);
 
-        if (!registro) {
-            return res.status(404).json({
-                mensaje: "Registro no encontrado"
-            });
-        }
-
-        res.json({
-            mensaje: "Registro eliminado correctamente",
-            registro
-        });
-    } catch (error) {
-        console.error("Error al eliminar registro de planning:", error);
-        res.status(500).json({
-            mensaje: "Error al eliminar registro de planning"
-        });
+    if (!registro) {
+      return res.status(404).json({
+        mensaje: "Registro no encontrado"
+      });
     }
+
+    res.json({
+      mensaje: "Registro eliminado correctamente",
+      registro
+    });
+  } catch (error) {
+    console.error("Error al eliminar registro de planning:", error);
+    res.status(500).json({
+      mensaje: "Error al eliminar registro de planning"
+    });
+  }
 }
 
+// ============================================================
+// BLOQUE: Exportación del controlador
+//
+// Qué hace:
+// - Expone las funciones usadas por planning.routes.js.
+// ============================================================
+
 module.exports = {
-    listarPlanes,
-    listarPlanResidentes,
-    asignarResidenteAPlan,
-    actualizarPlanResidente,
-    quitarResidenteDePlan,
-    listarAsignacionesTurno,
-    crearAsignacionTurno,
-    listarRegistros,
-    crearRegistro,
-    eliminarRegistro
+  listarPlanes,
+  listarPlanResidentes,
+  asignarResidenteAPlan,
+  actualizarPlanResidente,
+  quitarResidenteDePlan,
+  listarAsignacionesTurno,
+  crearAsignacionTurno,
+  listarRegistros,
+  crearRegistro,
+  actualizarRegistro,
+  eliminarRegistro
 };
