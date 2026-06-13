@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siesta</title>
+    <link rel="stylesheet" href="css/modulo.css">
+</head>
+<body>
+    <main class="modulo">
+        <header class="modulo-header">
+            <button class="btn-volver" onclick="window.location.href='menu-principal.html'">
+                ← Menú principal
+            </button>
+
+            <h1>Siesta</h1>
+
+            <button class="btn-salir" onclick="auth.cerrarSesion('index.html')">
+                Salir
+            </button>
+        </header>
+
+        <section class="modulo-body">
+            <div id="sesionInfo" class="meta"></div>
+
+            <div class="grid">
+                <section class="card" id="configSiestaCard">
+                    <h2>Configurar residentes de siesta</h2>
+
+                    <select id="residenteSelect">
+                        <option value="">Seleccionar residente...</option>
+                    </select>
+
+                    <textarea id="observacionConfig" placeholder="Observación opcional"></textarea>
+
+                    <button class="btn-primary" onclick="agregarResidenteSiesta()">
+                        Añadir a siesta
+                    </button>
+
+                    <div style="margin-top:14px;">
+                        <h2>Residentes configurados</h2>
+                        <div id="listaConfigurados" class="lista"></div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Turno mañana · Acostar</h2>
+                    <p class="meta">
+                        Al marcar un residente, el sistema registra la hora y el número de acostamiento.
+                    </p>
+
+                    <div id="listaAcostar" class="lista"></div>
+                </section>
+            </div>
+
+            <section class="card" style="margin-top:14px;">
+                <h2>Turno tarde · Orden para levantar</h2>
+                <p class="meta">
+                    La lista se ordena según el momento en que cada residente fue acostado.
+                </p>
+
+                <div id="listaLevantar" class="lista"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/siesta.js"></script>
+</body>
+</html>

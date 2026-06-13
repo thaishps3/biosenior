@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const siestaRoutes = require("./routes/siesta.routes");
 require("dotenv").config();
 
 const pool = require("./db/connection");
@@ -26,6 +27,7 @@ app.use("/api/residentes", residenteRoutes);
 app.use("/api/deposiciones", deposicionRoutes);
 app.use("/api/planning", planningRoutes);
 app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/siesta", siestaRoutes);
 
 app.get("/", (req, res) => {
     res.send("Servidor Control Bio-Senior funcionando");

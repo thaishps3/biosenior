@@ -1,329 +1,512 @@
 /* ============================================================
-   ATENCIÓN FOCAL v2 — Lógica principal
+   PLANNING — PostgreSQL / API REST
    ============================================================ */
 
-/* ── ESTADO GLOBAL ────────────────────────────────────────── */
-let currentPlan     = 'A';
-let viewAllMode     = false;
-let currentAuxiliar = '';
+let currentPlan = "A";
+let currentTurno = "Mañana";
+let viewAllMode = false;
 
-let data   = JSON.parse(localStorage.getItem('geria_p_v2')) || { A: [], B: [], C: [], D: [] };
-let matrix = JSON.parse(localStorage.getItem('geria_m_v2')) || [];
+let planes = [];
+let residentes = [];
+let planResidentes = [];
+let registros = [];
 
-const dateKey  = new Date().toLocaleDateString();
-const dateFull = new Date().toLocaleDateString('es-ES', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+const fechaHoy = new Date().toISOString().split("T")[0];
+
+const dateFull = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
 });
 
-/* ── REINICIO DIARIO ──────────────────────────────────────── */
-if (localStorage.getItem('geria_reset_v2') !== dateKey) {
-    for (let p in data) {
-        data[p].forEach(u => { u.done = false; u.time = null; u.incidencia = ''; });
+/* ============================================================
+   HELPERS
+   ============================================================ */
+
+function sesion() {
+    return auth?.sesion || null;
+}
+
+function esAdmin() {
+    return sesion()?.rol === "admin";
+}
+
+function escaparTexto(valor) {
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function accionPorTurno(turno) {
+    if (turno === "Mañana") return "levantar";
+    if (turno === "Tarde") return "siesta";
+    return "acostar";
+}
+
+function getPlanActual() {
+    return planes.find(p => p.letra === currentPlan);
+}
+
+function residentesDelPlanActual() {
+    return planResidentes.filter(r => r.plan_letra === currentPlan);
+}
+
+function fechaRegistro(r) {
+    if (r.fecha_iso) return r.fecha_iso;
+    if (r.fecha) return String(r.fecha).substring(0, 10);
+    return "";
+}
+
+function registroDelResidente(idResidente) {
+    return registros.find(r =>
+        Number(r.id_residente) === Number(idResidente) &&
+        fechaRegistro(r) === fechaHoy &&
+        r.turno === currentTurno
+    );
+}
+
+/* ============================================================
+   CARGA DE DATOS
+   ============================================================ */
+
+async function cargarDatos() {
+    const [
+        planesApi,
+        residentesApi,
+        planResidentesApi,
+        registrosApi
+    ] = await Promise.all([
+        api.obtenerPlanningPlanes(),
+        api.obtenerResidentes(),
+        api.obtenerPlanningPlanResidentes(),
+        api.obtenerPlanningRegistros()
+    ]);
+
+    planes = planesApi;
+    residentes = residentesApi.filter(r => r.activo !== false);
+    planResidentes = planResidentesApi;
+    registros = registrosApi;
+}
+
+/* ============================================================
+   UI INICIAL
+   ============================================================ */
+
+function prepararInterfazPlanning() {
+    document.getElementById("displayDate").innerText = dateFull.toUpperCase();
+
+    const s = sesion();
+
+    if (document.getElementById("headerAuxiliar")) {
+        document.getElementById("headerAuxiliar").innerText = s?.nombre || "Sin usuario";
     }
-    localStorage.setItem('geria_reset_v2', dateKey);
-    sync();
+
+    crearSelectorTurnoSiNoExiste();
+    prepararFormularioAsignacion();
+        aplicarPermisosPorRol();
 }
 
-/* ── PERSISTENCIA ─────────────────────────────────────────── */
-function sync() {
-    localStorage.setItem('geria_p_v2', JSON.stringify(data));
-    localStorage.setItem('geria_m_v2', JSON.stringify(matrix));
-}
+function aplicarPermisosPorRol() {
+    const s = sesion();
 
-/* ── LOGIN ────────────────────────────────────────────────── */
-(function initLogin() {
-    const saved = localStorage.getItem('geria_auxiliar_v2');
-    if (saved) {
-        document.getElementById('loginSavedHint').style.display = 'block';
-        document.getElementById('loginSavedName').innerText = saved;
+    const info = document.getElementById("planSesionInfo");
+
+    if (info && s) {
+        const rolColor = s.rol === "admin"
+            ? "background:#fef3e2;color:#7a4a00"
+            : "background:#e6f4f6;color:#0a5a68";
+
+        info.innerHTML = `
+            <span style="font-size:12px;font-weight:500;color:white;">${escaparTexto(s.nombre)}</span>
+            <span style="${rolColor};font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:6px;">
+                ${s.rol === "admin" ? "Admin" : "Auxiliar"}
+            </span>
+            <button onclick="auth.cerrarSesion('index.html')"
+                style="font-size:11px;margin-left:8px;
+                       background:rgba(255,255,255,0.2);
+                       border:1px solid rgba(255,255,255,0.4);
+                       color:white;border-radius:20px;
+                       padding:3px 10px;cursor:pointer;
+                       font-family:inherit;">
+                Salir
+            </button>
+        `;
     }
-})();
 
-function useSavedName() {
-    document.getElementById('loginNombre').value = localStorage.getItem('geria_auxiliar_v2') || '';
+    const adminBlock = document.querySelector(".collapsible-box");
+
+    if (!esAdmin()) {
+        if (adminBlock) adminBlock.style.display = "none";
+    } else {
+        if (adminBlock) adminBlock.style.display = "block";
+    }
+
+    const btnCambiar = document.querySelector(".btn-change-user");
+    if (btnCambiar) {
+        btnCambiar.style.display = "none";
+    }
 }
 
-function doLogin() {
-    const nombre = document.getElementById('loginNombre').value.trim();
-    if (!nombre) {
-        document.getElementById('loginNombre').style.borderColor = 'var(--danger)';
-        document.getElementById('loginNombre').placeholder = '⚠️ Introduce tu nombre para continuar';
+function crearSelectorTurnoSiNoExiste() {
+    if (document.getElementById("turnoSelect")) return;
+
+    const headerRight = document.querySelector(".header-right");
+
+    if (!headerRight) return;
+
+    const select = document.createElement("select");
+    select.id = "turnoSelect";
+    select.style.marginTop = "8px";
+    select.style.padding = "8px";
+    select.style.borderRadius = "8px";
+    select.style.border = "1px solid #dde4ea";
+
+    select.innerHTML = `
+        <option value="Mañana">Mañana · levantar</option>
+        <option value="Tarde">Tarde · siesta</option>
+        <option value="Noche">Noche · acostar</option>
+    `;
+
+    select.addEventListener("change", () => {
+        currentTurno = select.value;
+        render();
+    });
+
+    headerRight.appendChild(select);
+}
+
+function prepararFormularioAsignacion() {
+    const formBox = document.querySelector(".form-box");
+
+    if (!formBox) return;
+
+    formBox.innerHTML = `
+        <input type="hidden" id="editId">
+
+        <select id="residenteSelect">
+            <option value="">Seleccionar residente...</option>
+        </select>
+
+        
+        <select id="pañal">
+            <option value="-">Pañal — sin cambio programado</option>
+            <option value="S">Talla S</option>
+            <option value="M">Talla M</option>
+            <option value="L">Talla L</option>
+            <option value="XL">Talla XL</option>
+        </select>
+
+        <input type="text" id="obs" placeholder="Observaciones para este plan">
+
+        <label class="option-check risk">
+            <input type="checkbox" id="riesgo"> ⚠️ Residente de riesgo
+        </label>
+
+        <label class="option-check">
+            <input type="checkbox" id="encamado"> 🛏️ Residente encamado
+        </label>
+
+        <button class="btn-save" onclick="guardarAsignacionPlan()">
+            💾 ASIGNAR AL PLAN
+        </button>
+    `;
+}
+
+function cargarSelectResidentes() {
+    const select = document.getElementById("residenteSelect");
+
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Seleccionar residente...</option>`;
+
+    residentes.forEach(r => {
+        const nombre = escaparTexto(r.nombre);
+        const hab = r.habitacion ? ` · Hab. ${escaparTexto(r.habitacion)}` : "";
+
+        select.innerHTML += `
+            <option value="${r.id_residente}">
+                ${nombre}${hab}
+            </option>
+        `;
+    });
+}
+
+/* ============================================================
+   CAMBIO DE PLAN
+   ============================================================ */
+
+function setPlan(plan) {
+    currentPlan = plan;
+
+    const label = document.getElementById("planLabelTop");
+    if (label) label.innerText = plan;
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.innerText.trim() === plan);
+    });
+
+    resetForm();
+    render();
+}
+
+/* ============================================================
+   TOGGLE CAJAS
+   ============================================================ */
+
+function toggleBox(id) {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById(id + "-arrow");
+
+    if (!el) return;
+
+    el.classList.toggle("open");
+
+    const estaAbierto = el.classList.contains("open");
+
+    if (arrow) {
+        arrow.innerText = estaAbierto ? "▲" : "▼";
+    }
+
+    if (esAdmin() && id === "adminBox") {
+        renderChecklist();
+    }
+}
+
+/* ============================================================
+   ASIGNAR RESIDENTE A PLAN
+   ============================================================ */
+
+async function guardarAsignacionPlan() {
+    console.log("⚠️ guardarAsignacionPlan ejecutado");
+
+        if (!esAdmin()) {
+        alert("Solo el administrador puede asignar residentes a un plan.");
         return;
     }
-    currentAuxiliar = nombre;
-    localStorage.setItem('geria_auxiliar_v2', nombre);
+    const plan = getPlanActual();
 
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display   = 'block';
-    document.getElementById('displayDate').innerText     = dateFull.toUpperCase();
-    document.getElementById('headerAuxiliar').innerText  = nombre;
-
-    render();
-}
-
-function changeUser() {
-    if (confirm('¿Cambiar de auxiliar? Se cerrará la sesión actual.')) {
-        document.getElementById('appScreen').style.display   = 'none';
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('loginNombre').value = '';
-        currentAuxiliar = '';
+    if (!plan) {
+        alert("No se encontró el plan actual.");
+        return;
     }
-}
 
-/* ── HELPERS UI ───────────────────────────────────────────── */
-function toggleBox(id) {
-    const el    = document.getElementById(id);
-    const arrow = document.getElementById(id + '-arrow');
-    if (!el) return;
-    el.classList.toggle('open');
-    if (arrow) arrow.innerText = el.classList.contains('open') ? '▲' : '▼';
-}
+    const idAsignacion = document.getElementById("editId").value;
+    const idResidente = document.getElementById("residenteSelect").value;
 
-function setPlan(p) {
-    currentPlan = p;
-    document.getElementById('planLabelTop').innerText = p;
-    document.querySelectorAll('.tab-btn').forEach(b =>
-        b.classList.toggle('active', b.innerText === p));
-    render();
-}
-
-/* ── BACKUP / RESTORE ─────────────────────────────────────── */
-function exportBackup() {
-    const payload = {
-        version:    2,
-        exportDate: new Date().toISOString(),
-        auxiliar:   currentAuxiliar,
-        data,
-        matrix
+    const datos = {
+        id_plan: plan.id_plan,
+        id_residente: Number(idResidente),
+                panal: document.getElementById("pañal").value,
+        observacion: document.getElementById("obs").value.trim(),
+        riesgo: document.getElementById("riesgo").checked,
+        encamado: document.getElementById("encamado").checked
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `atencion_focal_backup_${dateKey.replace(/\//g, '-')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.getElementById('backupStatus').innerText = '✅ Backup exportado correctamente.';
-}
 
-function importBackup(evt) {
-    const file = evt.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            const payload = JSON.parse(e.target.result);
-            if (!payload.data || !payload.matrix) throw new Error('Formato incorrecto');
-            const fechaExport = payload.exportDate
-                ? new Date(payload.exportDate).toLocaleDateString('es-ES')
-                : 'desconocida';
-            if (!confirm(`¿Restaurar backup del ${fechaExport}?\nEsto sobreescribirá los datos actuales.`)) return;
-            data   = payload.data;
-            matrix = payload.matrix;
-            sync();
-            render();
-            document.getElementById('backupStatus').innerText = '✅ Datos restaurados correctamente.';
-        } catch (err) {
-            alert('❌ Error al leer el backup: ' + err.message);
+    if (!idAsignacion && !datos.id_residente) {
+        alert("Selecciona un residente.");
+        return;
+    }
+
+    try {
+        if (idAsignacion) {
+            await api.editarResidentePlan(idAsignacion, datos);
+        } else {
+            await api.asignarResidenteAPlan(datos);
         }
-    };
-    reader.readAsText(file);
-    evt.target.value = ''; // reset input para poder importar el mismo archivo dos veces
-}
 
-/* ── CHECKLIST ACTIONS ────────────────────────────────────── */
-function toggleCheck(id) {
-    const u = data[currentPlan].find(u => u.id == id);
-    u.done = !u.done;
-    u.time = u.done
-        ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : null;
-    if (u.done) {
-        matrix.push({
-            t:   u.time,
-            p:   currentPlan,
-            n:   u.nombre,
-            h:   u.hab,
-            uid: u.id,
-            d:   dateKey,
-            inc: u.incidencia || '',
-            obs: u.obs || '',
-            aux: currentAuxiliar
-        });
-    } else {
-        matrix = matrix.filter(m => !(m.uid === u.id && m.d === dateKey));
+        resetForm();
+        await cargarDatos();
+        cargarSelectResidentes();
+        render();
+
+    } catch (error) {
+        console.error(error);
+        alert(error.message || "No se pudo guardar la asignación.");
     }
-    sync();
-    render();
-}
-
-function addIncidencia(id) {
-    const u    = data[currentPlan].find(u => u.id == id);
-    const nota = prompt('Incidencia para ' + u.nombre + ':', u.incidencia || '');
-    if (nota === null) return;
-    u.incidencia = nota;
-    const mIdx = matrix.findIndex(m => m.uid === id && m.d === dateKey);
-    if (mIdx !== -1) matrix[mIdx].inc = nota;
-    sync();
-    render();
-}
-
-/* ── CRUD RESIDENTES ────────────────────────────────────────── */
-function saveUser() {
-    const id   = document.getElementById('editId').value;
-    const user = {
-        nombre:    document.getElementById('nombre').value.trim(),
-        hab:       document.getElementById('hab').value.trim(),
-        pañal:     document.getElementById('pañal').value,
-        obs:       document.getElementById('obs').value.trim(),
-        riesgo:    document.getElementById('riesgo').checked,
-        encamado:  document.getElementById('encamado').checked,
-        done:      false,
-        time:      null,
-        incidencia: ''
-    };
-    if (!user.nombre) return alert('Indica el nombre del residente.');
-    if (id) {
-        const i = data[currentPlan].findIndex(u => u.id == id);
-        user.done       = data[currentPlan][i].done;
-        user.time       = data[currentPlan][i].time;
-        user.incidencia = data[currentPlan][i].incidencia;
-        user.id         = Number(id);
-        data[currentPlan][i] = user;
-    } else {
-        user.id = Date.now();
-        data[currentPlan].push(user);
-    }
-    resetForm();
-    sync();
-    render();
-    if (document.getElementById('adminBox').classList.contains('open')) toggleBox('adminBox');
 }
 
 function startEdit(id) {
-    const u = data[currentPlan].find(u => u.id == id);
-    document.getElementById('editId').value     = u.id;
-    document.getElementById('nombre').value     = u.nombre;
-    document.getElementById('hab').value        = u.hab;
-    document.getElementById('pañal').value      = u.pañal;
-    document.getElementById('obs').value        = u.obs;
-    document.getElementById('riesgo').checked   = u.riesgo;
-    document.getElementById('encamado').checked = u.encamado;
-    window.scrollTo(0, 0);
-    if (!document.getElementById('adminBox').classList.contains('open')) toggleBox('adminBox');
+
+        if (!esAdmin()) return;
+    const asignacion = planResidentes.find(r =>
+        Number(r.id_plan_residente) === Number(id)
+    );
+
+    if (!asignacion) return;
+
+    document.getElementById("editId").value = asignacion.id_plan_residente;
+    document.getElementById("residenteSelect").value = asignacion.id_residente;
+   
+    document.getElementById("pañal").value = asignacion.panal || "-";
+    document.getElementById("obs").value = asignacion.observacion || "";
+    document.getElementById("riesgo").checked = !!asignacion.riesgo;
+    document.getElementById("encamado").checked = !!asignacion.encamado;
+
+    const adminBox = document.getElementById("adminBox");
+
+    if (adminBox && !adminBox.classList.contains("open")) {
+        toggleBox("adminBox");
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function deleteUser(id) {
-    if (confirm('¿Eliminar este residente de la lista permanente?')) {
-        data[currentPlan] = data[currentPlan].filter(u => u.id != id);
-        sync();
+async function deleteUser(id) {
+        if (!esAdmin()) {
+        alert("Solo el administrador puede retirar residentes del plan.");
+        return;
+    }
+    const confirmar = confirm("¿Retirar este residente del plan?");
+
+    if (!confirmar) return;
+
+    try {
+        await api.quitarResidenteDePlan(id);
+
+        await cargarDatos();
+        cargarSelectResidentes();
         render();
+
+    } catch (error) {
+        console.error(error);
+        alert(error.message || "No se pudo retirar el residente.");
     }
 }
 
 function resetForm() {
-    document.getElementById('editId').value = '';
-    ['nombre', 'hab', 'obs'].forEach(f => document.getElementById(f).value = '');
-    document.getElementById('pañal').value      = '-';
-    document.getElementById('riesgo').checked   = false;
-    document.getElementById('encamado').checked = false;
+    const campos = ["editId", "residenteSelect", "obs"];
+
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    const panal = document.getElementById("pañal");
+    if (panal) panal.value = "-";
+
+    const riesgo = document.getElementById("riesgo");
+    if (riesgo) riesgo.checked = false;
+
+    const encamado = document.getElementById("encamado");
+    if (encamado) encamado.checked = false;
 }
 
-/* ── HISTORIAL ────────────────────────────────────────────── */
-function toggleMatrixView() {
-    viewAllMode = !viewAllMode;
-    document.getElementById('btnToggleMatrix').innerText =
-        viewAllMode ? 'Ver solo Plan ' + currentPlan : 'Ver Todos los Planes';
-    render();
+/* ============================================================
+   MARCAR ATENDIDO / INCIDENCIA
+   ============================================================ */
+
+async function toggleCheck(idResidente) {
+    if (esAdmin()) {
+    alert("El administrador solo supervisa. La atención debe registrarla un auxiliar.");
+    return;
 }
+    console.log("✅ toggleCheck ejecutado con id_residente:", idResidente);
+    const plan = getPlanActual();
+    const s = sesion();
 
-/* ── REPORTE DE IMPRESIÓN ─────────────────────────────────── */
-function prepararImpresion() {
-    const auxiliar    = currentAuxiliar || 'No identificado';
-    const todayMatrix = matrix.filter(m => m.d === dateKey);
+    if (!plan || !s) return;
 
-    if (todayMatrix.length === 0) {
-        alert('No hay tareas completadas hoy para incluir en el reporte.');
+    const existente = registroDelResidente(idResidente);
+
+    try {
+        if (existente) {
+            await api.eliminarPlanningRegistro(existente.id_registro);
+        } else {
+            await api.crearPlanningRegistro({
+                id_plan: plan.id_plan,
+                id_residente: idResidente,
+                id_usuario: s.id_usuario,
+                fecha: fechaHoy,
+                turno: currentTurno,
+                accion: accionPorTurno(currentTurno)
+            });
+        }
+
+        await cargarDatos();
+        render();
+
+    } catch (error) {
+    console.error(error);
+
+    if (error.message && error.message.includes("ya fue registrado")) {
+        await cargarDatos();
+        render();
         return;
     }
 
-    // Solo tareas completadas, ordenadas por hora
-    const completadas = todayMatrix.slice().sort((a, b) => a.t.localeCompare(b.t));
-
-    const planes = ['A', 'B', 'C', 'D'];
-    let tableRows        = '';
-    let totalIncidencias = 0;
-
-    planes.forEach(plan => {
-        const planRows = completadas.filter(m => m.p === plan);
-        if (planRows.length === 0) return;
-
-        tableRows += `<tr style="background:#e8f4f6;">
-            <td colspan="5" style="font-weight:bold; font-size:9pt; letter-spacing:0.5px; padding:6px 9px;">
-                PLAN ${plan}
-            </td>
-        </tr>`;
-
-        planRows.forEach(m => {
-            const obs = m.obs
-                ? `<br><span style="color:#555; font-size:9pt;">📋 ${m.obs}</span>`
-                : '';
-            const inc = m.inc
-                ? `<br><span style="color:#c0392b; font-weight:bold; font-size:9pt;">⚠️ ${m.inc}</span>`
-                : '';
-            if (m.inc) totalIncidencias++;
-            tableRows += `<tr>
-                <td>${m.t}</td>
-                <td>${m.h}</td>
-                <td>${m.n}${obs}${inc}</td>
-                <td style="text-align:center; font-size:1.1em; color:#2e7d5e;">✓</td>
-                <td>${m.aux || auxiliar}</td>
-            </tr>`;
-        });
-    });
-
-    const totalAtendidos  = completadas.length;
-    const totalResidentes = Object.values(data).reduce((acc, p) => acc + p.length, 0);
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const incBadge = totalIncidencias > 0
-        ? `&nbsp;|&nbsp; <span style="color:#c0392b;"><strong>⚠️ Incidencias: ${totalIncidencias}</strong></span>`
-        : '';
-
-    document.getElementById('printArea').innerHTML = `
-        <div class="report-header">
-            <h2>REPORTE DE ATENCIÓN — ATENCIÓN FOCAL</h2>
-            <p><strong>Fecha:</strong> ${dateFull.toUpperCase()}</p>
-            <p><strong>Auxiliar responsable:</strong> ${auxiliar}</p>
-            <p>
-                <strong>Hora de generación:</strong> ${now}
-                &nbsp;|&nbsp;
-                <strong>Atendidos:</strong> ${totalAtendidos} de ${totalResidentes} residentes
-                ${incBadge}
-            </p>
-        </div>
-
-        <table class="report-table">
-            <thead>
-                <tr>
-                    <th style="width:60px">Hora</th>
-                    <th style="width:70px">Hab.</th>
-                    <th>Residente / Observaciones / Incidencias</th>
-                    <th style="width:36px; text-align:center;">✓</th>
-                    <th style="width:130px">Auxiliar</th>
-                </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-        </table>
-
-        <div class="sign-block">
-            <span>Firma del auxiliar: _________________________________</span>
-            <span>Hora de cierre de turno: _____________</span>
-        </div>`;
-
-    window.print();
+    alert(error.message || "No se pudo actualizar el registro.");
+}
 }
 
-/* ── RENDER PRINCIPAL ─────────────────────────────────────── */
+async function addIncidencia(idResidente) {
+    const plan = getPlanActual();
+    const s = sesion();
+
+    if (!plan || !s) return;
+
+    let registro = registroDelResidente(idResidente);
+
+    const texto = prompt(
+        "Incidencia u observación:",
+        registro?.incidencia || ""
+    );
+
+    if (texto === null) return;
+
+    try {
+        if (!registro) {
+            await api.crearPlanningRegistro({
+                id_plan: plan.id_plan,
+                id_residente: idResidente,
+                id_usuario: s.id_usuario,
+                fecha: fechaHoy,
+                turno: currentTurno,
+                accion: accionPorTurno(currentTurno),
+                incidencia: texto
+            });
+        } else {
+            await api.editarPlanningRegistro(registro.id_registro, {
+                incidencia: texto,
+                observacion: registro.observacion || null,
+                realizado: true
+            });
+        }
+
+        await cargarDatos();
+        render();
+
+    } catch (error) {
+        console.error(error);
+        alert(error.message || "No se pudo guardar la incidencia.");
+    }
+}
+
+/* ============================================================
+   HISTORIAL
+   ============================================================ */
+
+function toggleMatrixView() {
+    viewAllMode = !viewAllMode;
+
+    const btn = document.getElementById("btnToggleMatrix");
+
+    if (btn) {
+        btn.innerText = viewAllMode
+            ? "Ver solo Plan " + currentPlan
+            : "Ver Todos los Planes";
+    }
+
+    renderHistorial();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+
 function render() {
     renderChecklist();
     renderEditList();
@@ -331,142 +514,367 @@ function render() {
 }
 
 function renderChecklist() {
-    const checkDiv   = document.getElementById('checklist');
-    checkDiv.innerHTML = '';
-    const pendientes  = data[currentPlan].filter(u => !u.done);
-    const completados = data[currentPlan].filter(u => u.done);
+    const contenedor = document.getElementById("checklist");
+    if (!contenedor) return;
 
-    if (pendientes.length === 0 && completados.length === 0) {
-        checkDiv.innerHTML = `<div class="empty-state">
-            Sin residentes en el Plan ${currentPlan}.<br>
-            Añade desde ⚙️ Gestionar Lista.
-        </div>`;
+    const residentesPlan = residentesDelPlanActual();
+
+    // Vista ADMIN: lista compacta informativa, sin cards
+    if (esAdmin()) {
+    const adminBox = document.getElementById("adminBox");
+    const ajustesAbiertos = adminBox && adminBox.classList.contains("open");
+
+    if (ajustesAbiertos) {
+        contenedor.innerHTML = "";
+        contenedor.style.display = "none";
         return;
     }
 
-    pendientes.forEach(u => checkDiv.appendChild(createCard(u)));
+    contenedor.style.display = "block";
 
-    if (completados.length > 0) {
-        const divider = document.createElement('div');
-        divider.className = 'section-divider';
-        divider.innerText = `✓ Atendidos (${completados.length})`;
-        checkDiv.appendChild(divider);
-        completados.forEach(u => checkDiv.appendChild(createCard(u)));
+    if (residentesPlan.length === 0) {
+        contenedor.innerHTML = `
+            <div class="admin-plan-list no-print">
+                <h3>Residentes asignados al PLAN ${currentPlan}</h3>
+                <p class="empty-msg">No hay residentes asignados a este plan.</p>
+            </div>
+        `;
+        return;
     }
+
+    contenedor.innerHTML = `
+        <div class="admin-plan-list no-print">
+            <h3>Residentes asignados al PLAN ${currentPlan}</h3>
+            <ul>
+                ${residentesPlan.map(r => {
+                    const nombreResidente = r.nombre || r.residente_nombre || r.nombre_residente || "Sin nombre";
+
+                    return `
+                        <li>
+                            <strong>${escaparTexto(nombreResidente)}</strong>
+                            ${r.habitacion ? `<span>Hab. ${escaparTexto(r.habitacion)}</span>` : ""}
+                        </li>
+                    `;
+                }).join("")}
+            </ul>
+        </div>
+    `;
+
+    return;
 }
 
-function renderEditList() {
-    const editDiv = document.getElementById('editList');
-    editDiv.innerHTML = `<div style="padding:12px 18px; font-weight:700; color:var(--muted); font-size:0.78em; text-transform:uppercase; letter-spacing:0.3px;">
-        Residentes en Plan ${currentPlan}
-    </div>`;
+    // Vista AUXILIAR: cards operativas
+    contenedor.style.display = "block";
 
-    if (!data[currentPlan].length) {
-        editDiv.innerHTML += `<div style="padding:14px 18px; color:var(--muted); font-size:0.85em;">
-            Sin residentes en este plan.
-        </div>`;
+    const pendientes = residentesPlan.filter(r => !registroDelResidente(r.id_residente));
+    const atendidos = residentesPlan.filter(r => registroDelResidente(r.id_residente));
+
+    contenedor.innerHTML = `
+        <div class="section-title">
+            Pendientes — PLAN ${currentPlan}
+        </div>
+        <div id="listaPendientes" class="cards-list"></div>
+
+        <div class="section-title">
+            Atendidos
+        </div>
+        <div id="listaAtendidos" class="cards-list"></div>
+    `;
+
+    const listaPendientes = document.getElementById("listaPendientes");
+    const listaAtendidos = document.getElementById("listaAtendidos");
+
+    pendientes.forEach(r => {
+        listaPendientes.appendChild(crearTarjetaResidente(r));
+    });
+
+    atendidos.forEach(r => {
+        listaAtendidos.appendChild(crearTarjetaResidente(r));
+    });
+}
+function renderEditList() {
+    const contenedor = document.getElementById("editList");
+
+    if (!esAdmin()) {
+        if (contenedor) contenedor.innerHTML = "";
+        return;
+    }
+    if (!contenedor) return;
+
+    const residentesPlan = residentesDelPlanActual();
+
+    contenedor.innerHTML = `
+        <div style="padding:12px 18px; font-weight:700; color:var(--muted); font-size:0.78em; text-transform:uppercase; letter-spacing:0.3px;">
+            Residentes en Plan ${currentPlan}
+        </div>
+    `;
+
+    if (!residentesPlan.length) {
+        contenedor.innerHTML += `
+            <div style="padding:14px 18px; color:var(--muted); font-size:0.85em;">
+                Sin residentes en este plan.
+            </div>
+        `;
         return;
     }
 
-    data[currentPlan].forEach(u => {
-        const riesgoTag = u.riesgo
-            ? '<span style="color:var(--danger); font-size:0.8em;"> ⚠️</span>'
-            : '';
-        editDiv.innerHTML += `
+    residentesPlan.forEach(r => {
+        const riesgoTag = r.riesgo
+            ? `<span style="color:var(--danger); font-size:0.8em;"> ⚠️</span>`
+            : "";
+
+        contenedor.innerHTML += `
             <div class="edit-item">
                 <span>
-                    ${u.nombre}
-                    <small style="color:var(--muted)"> · Hab ${u.hab}</small>
+                    ${escaparTexto(r.residente_nombre)}
+                    <small style="color:var(--muted)">
+                        · Hab ${escaparTexto(r.habitacion || "-")}
+                    </small>
                     ${riesgoTag}
                 </span>
+
                 <div>
-                    <button onclick="startEdit(${u.id})"
+                    <button onclick="startEdit(${r.id_plan_residente})"
                         style="background:var(--primary-lt);color:var(--primary-dk);border:none;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:0.9em;">
                         ✏️
                     </button>
-                    <button onclick="deleteUser(${u.id})"
+
+                    <button onclick="deleteUser(${r.id_plan_residente})"
                         style="background:var(--danger-lt);color:var(--danger);border:none;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:0.9em;margin-left:6px;">
                         🗑️
                     </button>
                 </div>
-            </div>`;
+            </div>
+        `;
     });
 }
 
 function renderHistorial() {
-    const tbody      = document.querySelector('#matrixTable tbody');
-    const todayMatrix = matrix.filter(m => m.d === dateKey);
-    const filtered   = todayMatrix
-        .filter(m => viewAllMode ? true : m.p === currentPlan)
+    const tbody = document.querySelector("#matrixTable tbody");
+
+    if (!tbody) return;
+
+    const filtrados = registros
+        .filter(r => fechaRegistro(r) === fechaHoy)
+        .filter(r => viewAllMode ? true : r.plan_letra === currentPlan)
+        .filter(r => r.turno === currentTurno)
         .slice()
         .reverse();
 
-    if (!filtered.length) {
-        tbody.innerHTML = `<tr>
-            <td colspan="3" style="text-align:center; color:var(--muted); padding:18px;">
-                Sin registros hoy.
-            </td>
-        </tr>`;
+    if (!filtrados.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align:center; color:var(--muted); padding:18px;">
+                    Sin registros hoy.
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    tbody.innerHTML = filtered.map(m => {
+    tbody.innerHTML = filtrados.map(r => {
         const planCol = viewAllMode
-            ? `<b>${m.p}</b> — ${m.h}`
-            : m.h;
-        const incTag = m.inc
-            ? `<br><small style="color:var(--danger)">⚠️ ${m.inc}</small>`
-            : '';
-        return `<tr>
-            <td>${m.t}</td>
-            <td>${planCol}</td>
-            <td>${m.n}${incTag}</td>
-        </tr>`;
-    }).join('');
+            ? `<b>${escaparTexto(r.plan_letra)}</b> — ${escaparTexto(r.habitacion || "-")}`
+            : escaparTexto(r.habitacion || "-");
+
+        const incTag = r.incidencia
+            ? `<br><small style="color:var(--danger)">⚠️ ${escaparTexto(r.incidencia)}</small>`
+            : "";
+
+        return `
+            <tr>
+                <td>${escaparTexto(r.hora || "")}</td>
+                <td>${planCol}</td>
+                <td>${escaparTexto(r.residente_nombre || "")}${incTag}</td>
+            </tr>
+        `;
+    }).join("");
 }
 
-/* ── CREAR TARJETA ────────────────────────────────────────── */
-function createCard(u) {
-    const card = document.createElement('div');
-    card.className = `user-card ${u.riesgo ? 'is-risk' : ''} ${u.done ? 'checked' : ''}`;
+/* ============================================================
+   TARJETA RESIDENTE
+   ============================================================ */
 
-    let badges = '';
-    if (u.riesgo)                    badges += `<span class="badge badge-risk">⚠️ RIESGO</span>`;
-    if (u.encamado)                  badges += `<span class="badge badge-cama">🛏️ Encamado</span>`;
-    if (u.pañal && u.pañal !== '-') badges += `<span class="badge badge-pañal">🩺 Pañal ${u.pañal}</span>`;
-    if (u.done && u.time)            badges += `<span class="badge badge-done">✓ ${u.time}</span>`;
+function crearTarjetaResidente(r) {
+    const card = document.createElement("div");
+    const registro = registroDelResidente(r.id_residente);
+    const done = !!registro;
 
-    const obsHtml = u.obs
-        ? `<small>${u.obs}</small>`
-        : '';
-    const incHtml = u.incidencia
-        ? `<div class="incidencia-txt">⚠️ <b>Incidencia:</b> ${u.incidencia}</div>`
-        : '';
+    card.className = `user-card ${r.riesgo ? "is-risk" : ""} ${done ? "checked" : ""}`;
+
+    let badges = "";
+
+    if (r.riesgo) {
+        badges += `<span class="badge badge-risk">⚠️ RIESGO</span>`;
+    }
+
+    if (r.encamado) {
+        badges += `<span class="badge badge-cama">🛏️ Encamado</span>`;
+    }
+
+    if (r.panal && r.panal !== "-") {
+        badges += `<span class="badge badge-pañal">🩺 Pañal ${escaparTexto(r.panal)}</span>`;
+    }
+
+    if (done && registro?.hora) {
+        badges += `<span class="badge badge-done">✓ ${escaparTexto(registro.hora)}</span>`;
+    }
+
+    const obsHtml = r.observacion
+        ? `<small>${escaparTexto(r.observacion)}</small>`
+        : "";
+
+    const incHtml = registro?.incidencia
+        ? `<div class="incidencia-txt">⚠️ <b>Incidencia:</b> ${escaparTexto(registro.incidencia)}</div>`
+        : "";
+
     const badgesHtml = badges
         ? `<div style="margin-top:5px;">${badges}</div>`
-        : '';
+        : "";
 
     card.innerHTML = `
-        <input type="checkbox" class="check-round" ${u.done ? 'checked' : ''} onclick="toggleCheck(${u.id})">
+        ${esAdmin()
+    ? `<span class="check-round" style="display:inline-flex;align-items:center;justify-content:center;">
+           ${done ? "✓" : ""}
+       </span>`
+    : `<input type="checkbox"
+           class="check-round"
+           ${done ? "checked" : ""}
+           onclick="event.stopPropagation(); toggleCheck(${r.id_residente})">`
+}
         <div class="user-info">
             <strong>
-                ${u.nombre}
-                <span style="font-weight:500; color:var(--muted); font-size:0.88rem;"> · Hab ${u.hab}</span>
+                ${escaparTexto(r.residente_nombre)}
+                <span style="font-weight:500; color:var(--muted); font-size:0.88rem;">
+                    · Hab ${escaparTexto(r.habitacion || "-")}
+                </span>
             </strong>
+
             ${obsHtml}
             ${badgesHtml}
             ${incHtml}
         </div>
-        <button class="btn-nota" onclick="addIncidencia(${u.id})" title="Añadir/editar incidencia">📝</button>`;
 
+        <button class="btn-nota"
+                onclick="addIncidencia(${r.id_residente})"
+                title="Añadir/editar incidencia">
+            📝
+        </button>
+    `;
+    card.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        if (event.target.closest("input")) return;
+
+        toggleCheck(r.id_residente);
+    });
     return card;
 }
 
-/* ── SERVICE WORKER ───────────────────────────────────────── */
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('Atención Focal: Offline Ready ✅'))
-            .catch(err => console.warn('SW no activo (normal en local):', err));
-    });
+/* ============================================================
+   IMPRESIÓN
+   ============================================================ */
+
+function prepararImpresion() {
+    const s = sesion();
+
+    const registrosHoy = registros
+        .filter(r => fechaRegistro(r) === fechaHoy)
+        .filter(r => viewAllMode ? true : r.plan_letra === currentPlan)
+        .filter(r => r.turno === currentTurno)
+        .slice()
+        .sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
+
+    if (!registrosHoy.length) {
+        alert("No hay registros para imprimir.");
+        return;
+    }
+
+    const filas = registrosHoy.map(r => `
+        <tr>
+            <td>${escaparTexto(r.hora || "")}</td>
+            <td>${escaparTexto(r.plan_letra || "")}</td>
+            <td>${escaparTexto(r.habitacion || "")}</td>
+            <td>${escaparTexto(r.residente_nombre || "")}</td>
+            <td>${escaparTexto(r.accion || "")}</td>
+            <td>${escaparTexto(r.auxiliar_nombre || s?.nombre || "")}</td>
+            <td>${escaparTexto(r.incidencia || "")}</td>
+        </tr>
+    `).join("");
+
+    const printArea = document.getElementById("printArea");
+
+    if (!printArea) {
+        alert("No existe el área de impresión.");
+        return;
+    }
+
+    printArea.innerHTML = `
+        <div class="report-header">
+            <h2>REPORTE DE PLANNING</h2>
+            <p><strong>Fecha:</strong> ${dateFull.toUpperCase()}</p>
+            <p><strong>Turno:</strong> ${currentTurno}</p>
+            <p><strong>Acción:</strong> ${accionPorTurno(currentTurno)}</p>
+            <p><strong>Auxiliar:</strong> ${escaparTexto(s?.nombre || "No identificado")}</p>
+        </div>
+
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Plan</th>
+                    <th>Hab.</th>
+                    <th>Residente</th>
+                    <th>Acción</th>
+                    <th>Auxiliar</th>
+                    <th>Incidencia</th>
+                </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+        </table>
+    `;
+
+    window.print();
 }
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+
+async function iniciarPlanning() {
+    if (!auth.verificarSesion("index.html")) return;
+
+      const appScreen = document.getElementById("appScreen");
+    if (appScreen) appScreen.style.display = "block";
+
+    const loginScreen = document.getElementById("loginScreen");
+    if (loginScreen) loginScreen.style.display = "none";
+    
+    const hora = new Date().getHours();
+
+    if (hora >= 7 && hora < 14) {
+        currentTurno = "Mañana";
+    } else if (hora >= 14 && hora < 20) {
+        currentTurno = "Tarde";
+    } else {
+        currentTurno = "Noche";
+    }
+
+    try {
+        prepararInterfazPlanning();
+
+        const turnoSelect = document.getElementById("turnoSelect");
+        if (turnoSelect) turnoSelect.value = currentTurno;
+
+        await cargarDatos();
+        cargarSelectResidentes();
+        render();
+
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo cargar Planning. Revisa backend, rutas API o consola.");
+    }
+}
+
+  
+
+window.onload = iniciarPlanning;

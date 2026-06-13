@@ -2,7 +2,7 @@
 // Los usuarios viven en PostgreSQL.
 // La sesión activa vive temporalmente en sessionStorage.
 
-const API_URL_AUTH = "http://localhost:3000/api";
+const API_URL_AUTH = `${window.location.origin}/api`;
 
 const auth = {
     usuarios: [],

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atención Focal</title>
+    <title>Planning</title>
     <link rel="stylesheet" href="planning/css/styles.css">
     <style>.btn-hub{position:fixed;top:12px;left:12px;background:rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.2);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;color:inherit;z-index:99;}@media print{.btn-hub{display:none;}}</style>
 </head>
@@ -24,18 +24,18 @@
                    border:1px solid rgba(255,255,255,0.3);border-radius:20px;
                    padding:4px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;">← Menú principal</button>
         <h1 style="flex:1;color:white;font-size:16px;font-weight:700;text-align:center;
-                   text-transform:uppercase;letter-spacing:0.5px;margin:0;">Atención Focal</h1>
+                   text-transform:uppercase;letter-spacing:0.5px;margin:0;">Planning</h1>
         <div id="planSesionInfo" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
     </div>
 
     <div class="header-info no-print">
         <div class="header-left">
             <div class="date-text" id="displayDate"></div>
-            <div class="auxiliar-badge">👤 <span id="headerAuxiliar"></span></div>
+            
         </div>
         <div class="header-right">
             <div class="plan-label">PLAN <span id="planLabelTop">A</span></div>
-            <button class="btn-change-user" onclick="changeUser()">Cambiar auxiliar</button>
+           
         </div>
     </div>
 
@@ -50,7 +50,7 @@
     <!-- Gestión de lista permanente -->
     <div class="collapsible-box no-print">
         <div class="collapsible-header" onclick="toggleBox('adminBox')">
-            <span>⚙️ Gestión de residentes</span>
+            <span>⚙️ Asignar residentes al plan</span>
             <span id="adminBox-arrow">▼</span>
         </div>
         <div class="collapsible-content" id="adminBox">
@@ -72,34 +72,13 @@
                 <label class="option-check">
                     <input type="checkbox" id="encamado"> 🛏️ USUARIO ENCAMADO
                 </label>
-                <button class="btn-save" onclick="saveUser()">💾 GUARDAR EN LISTA</button>
+                <button class="btn-save" onclick="guardarAsignacionPlan()">💾 ASIGNAR AL PLAN</button>
             </div>
             <div id="editList"></div>
         </div>
     </div>
 
-    <!-- Backup / Restaurar -->
-    <div class="backup-box no-print">
-        <div class="collapsible-header" onclick="toggleBox('backupBox')" style="background: var(--muted);">
-            <span>💾 BACKUP — EXPORTAR / RESTAURAR</span>
-            <span id="backupBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="backupBox">
-            <div class="backup-inner">
-                <p style="font-size:0.82em; color:var(--muted);">
-                    Exporta todos los datos (residentes, planes e historial) a un archivo JSON seguro.
-                    Para restaurar, importa ese mismo archivo.
-                </p>
-                <div class="backup-row">
-                    <button class="btn-backup export" onclick="exportBackup()">⬇️ Exportar backup</button>
-                    <button class="btn-backup import" onclick="document.getElementById('importFile').click()">⬆️ Restaurar backup</button>
-                </div>
-                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
-                <div class="backup-hint" id="backupStatus">Los datos se guardan automáticamente en este dispositivo.</div>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- Checklist principal -->
     <div id="checklist" class="no-print"></div>
 
@@ -142,7 +121,7 @@
     <div id="printArea" class="only-print"></div>
 
     <div class="footer no-print">
-        Diseño Funcional: <strong>AF</strong> &nbsp;·&nbsp; Desarrollo: Gemini Engine &nbsp;·&nbsp; v2.0
+        Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: chatGPT Plus &nbsp;·&nbsp; 
     </div>
 
 </div><!-- /main-container -->
@@ -151,7 +130,7 @@
 
 
 <script src="js/auth.js"></script>
+<script src="js/api.js"></script>
 <script src="planning/js/script.js"></script>
-<script src="planning/js/session-check.js"></script>
 </body>
 </html>

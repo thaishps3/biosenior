@@ -843,7 +843,6 @@ async function borrarLog(id) {
 // ─────────────────────────────────────────────────────────────
 // Impresión
 // ─────────────────────────────────────────────────────────────
-
 function prepararImpresion() {
     const fF = document.getElementById("filtro")?.value;
     const fU = document.getElementById("filtroUsuario")?.value;
@@ -854,9 +853,13 @@ function prepararImpresion() {
 
     let quienTexto = "Todos los residentes";
 
-    if (filtroQuienModo === "usuario" && fU) quienTexto = fU;
-    else if (filtroQuienModo === "masculino") quienTexto = "Masculino";
-    else if (filtroQuienModo === "femenino") quienTexto = "Femenino";
+    if (filtroQuienModo === "usuario" && fU) {
+        quienTexto = fU;
+    } else if (filtroQuienModo === "masculino") {
+        quienTexto = "Masculino";
+    } else if (filtroQuienModo === "femenino") {
+        quienTexto = "Femenino";
+    }
 
     const auxiliarNombre = auth.sesion ? auth.sesion.nombre : "";
     const registros = obtenerRegistrosFiltrados();
@@ -864,7 +867,7 @@ function prepararImpresion() {
     const filas = registros.map(l => `
         <tr>
             <td>${l.fechaISO ? l.fechaISO.substring(5) : ""} ${l.fechaFull || ""}</td>
-            <td>${escaparTexto(l.nombre)}</td>
+            <td>${escaparTexto(l.nombre || "")}</td>
             <td>${escaparTexto(l.auxiliar || "---")}</td>
             <td>${escaparTexto(l.turno || "---")}</td>
             <td>${escaparTexto(l.depo || "---")}</td>
@@ -873,47 +876,177 @@ function prepararImpresion() {
         </tr>
     `).join("");
 
-    const logoUrl = window.location.origin + window.location.pathname.replace("biosenior.html", "") + "img/Logo-SGP-blanc.png";
+    const contenidoReporte = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Reporte BioSenior</title>
 
-    const anterior = document.getElementById("zonaImpresion");
-    if (anterior) anterior.remove();
+            <style>
+                @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                }
 
-    const zona = document.createElement("div");
-    zona.id = "zonaImpresion";
+                * {
+                    box-sizing: border-box;
+                }
 
-    zona.innerHTML = `
-        <div class="rh">
-            <img src="${logoUrl}" alt="SGP" onerror="this.style.display='none'">
-            <div class="rh-info">
-                <p class="rh-titulo">Reporte Bio-Senior</p>
-                <p class="rh-meta">Fecha: ${fechaTexto} &nbsp;·&nbsp; ${quienTexto}${auxiliarNombre ? " &nbsp;·&nbsp; Auxiliar: " + escaparTexto(auxiliarNombre) : ""}</p>
+                html,
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background: #ffffff;
+                    color: #000000;
+                    font-family: Arial, sans-serif;
+                }
+
+                .reporte {
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .encabezado {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    width: 100%;
+                    margin: 0 0 10px 0;
+                    padding: 0 0 8px 0;
+                    border-bottom: 2px solid #222;
+                }
+
+                .marca {
+                    width: 75px;
+                    min-width: 75px;
+                    font-size: 10px;
+                    color: #777;
+                    line-height: 1.2;
+                }
+
+                .titulo {
+                    margin: 0;
+                    padding: 0;
+                    font-size: 18px;
+                    font-weight: bold;
+                    line-height: 1.2;
+                }
+
+                .meta {
+                    margin: 3px 0 0 0;
+                    padding: 0;
+                    font-size: 11px;
+                    color: #333;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 10px;
+                    margin: 0;
+                }
+
+                th,
+                td {
+                    border: 1px solid #999;
+                    padding: 5px;
+                    text-align: left;
+                    vertical-align: top;
+                }
+
+                th {
+                    background: #eeeeee;
+                    font-weight: bold;
+                }
+
+                .footer {
+                    margin-top: 10px;
+                    font-size: 9px;
+                    color: #555;
+                    text-align: right;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="reporte">
+                <div class="encabezado">
+                    <div class="marca">Residencial<br>SantGervasiParc</div>
+
+                    <div>
+                        <p class="titulo">Reporte Bio-Senior</p>
+                        <p class="meta">
+                            Fecha: ${fechaTexto}
+                            &nbsp;·&nbsp;
+                            ${quienTexto}
+                            ${auxiliarNombre ? `&nbsp;·&nbsp; Auxiliar: ${escaparTexto(auxiliarNombre)}` : ""}
+                        </p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Residente</th>
+                            <th>Auxiliar</th>
+                            <th>Turno</th>
+                            <th>Deposición</th>
+                            <th>Micción</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        ${
+                            filas ||
+                            '<tr><td colspan="7" style="text-align:center;color:#777;padding:16px;">Sin registros</td></tr>'
+                        }
+                    </tbody>
+                </table>
+
+                <p class="footer">
+                    Diseño funcional por TP &copy; 2026 &nbsp;·&nbsp; ${registros.length} registros
+                </p>
             </div>
-        </div>
-
-        <div class="rb">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Residente</th>
-                        <th>Auxiliar</th>
-                        <th>Turno</th>
-                        <th>Deposición</th>
-                        <th>Micción</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filas || '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:16px;">Sin registros</td></tr>'}
-                </tbody>
-            </table>
-
-            <p class="rf">Diseño funcional por TP &copy; 2026 &nbsp;·&nbsp; ${registros.length} registros</p>
-        </div>
+        </body>
+        </html>
     `;
 
-    document.body.appendChild(zona);
-    window.print();
+    const iframeAnterior = document.getElementById("iframeImpresionBiosenior");
+    if (iframeAnterior) iframeAnterior.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "iframeImpresionBiosenior";
+
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.opacity = "0";
+
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+
+    doc.open();
+    doc.write(contenidoReporte);
+    doc.close();
+
+    iframe.onload = () => {
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+
+            setTimeout(() => {
+                iframe.remove();
+            }, 1000);
+        }, 300);
+    };
 }
 
 // ─────────────────────────────────────────────────────────────

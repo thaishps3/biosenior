@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = `${window.location.origin}/api`;
 
 async function apiGet(ruta) {
     const respuesta = await fetch(`${API_URL}${ruta}`);
@@ -130,20 +130,81 @@ eliminarDeposicion(id) {
         return apiGet("/deposiciones/alertas");
     },
 
-    // Planning
-    obtenerPlanning() {
-        return apiGet("/planning");
-    },
 
-    crearAsignacionPlanning(datos) {
-        return apiPost("/planning", datos);
-    },
+// Planning
+obtenerPlanningPlanes() {
+    return apiGet("/planning/planes");
+},
 
-    obtenerAuxiliares() {
-        return apiGet("/planning/auxiliares");
-    },
+obtenerPlanningPlanResidentes() {
+    return apiGet("/planning/plan-residentes");
+},
 
-    obtenerTareas() {
-        return apiGet("/planning/tareas");
-    }
+asignarResidenteAPlan(datos) {
+    return apiPost("/planning/plan-residentes", datos);
+},
+
+editarResidentePlan(id, datos) {
+    return apiPut(`/planning/plan-residentes/${id}`, datos);
+},
+
+quitarResidenteDePlan(id) {
+    return apiDelete(`/planning/plan-residentes/${id}`);
+},
+
+obtenerPlanningAsignaciones() {
+    return apiGet("/planning/asignaciones");
+},
+
+crearPlanningAsignacion(datos) {
+    return apiPost("/planning/asignaciones", datos);
+},
+
+obtenerPlanningRegistros() {
+    return apiGet("/planning/registros");
+},
+
+crearPlanningRegistro(datos) {
+    return apiPost("/planning/registros", datos);
+},
+
+eliminarPlanningRegistro(id) {
+    return apiDelete(`/planning/registros/${id}`);
+},
+
+editarPlanningRegistro(id, datos) {
+    return apiPut(`/planning/registros/${id}`, datos);
+},
+
+// Siesta
+obtenerSiestaResidentes() {
+    return apiGet("/siesta/residentes");
+},
+
+agregarSiestaResidente(datos) {
+    return apiPost("/siesta/residentes", datos);
+},
+
+quitarSiestaResidente(id) {
+    return apiDelete(`/siesta/residentes/${id}`);
+},
+
+obtenerSiestaRegistrosHoy() {
+    return apiGet("/siesta/registros/hoy");
+},
+
+acostarSiestaResidente(datos) {
+    return apiPost("/siesta/acostar", datos);
+},
+
+levantarSiestaResidente(id, datos) {
+    return apiPut(`/siesta/levantar/${id}`, datos);
+},
+
+cancelarSiestaRegistro(id) {
+    return apiPut(`/siesta/cancelar/${id}`, {});
+},
 };
+
+
+

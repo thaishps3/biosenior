@@ -326,53 +326,6 @@ select:focus {
   background: #235f47;
 }
 
-/* ── BACKUP BOX ───────────────────────────────────────────── */
-
-.backup-box {
-  background: var(--muted);
-  border-radius: 12px;
-  margin-bottom: 14px;
-  overflow: hidden;
-}
-
-.backup-inner {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: white;
-}
-
-.backup-row {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-backup {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-radius: 9px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.btn-backup.export {
-  background: var(--primary-lt);
-  color: var(--primary-dk);
-}
-
-.btn-backup.import {
-  background: var(--warning-lt);
-  color: var(--warning);
-}
-
-.backup-hint {
-  font-size: 0.75em;
-  color: var(--muted);
-  text-align: center;
-}
 
 /* ── USER CARDS ───────────────────────────────────────────── */
 
@@ -653,4 +606,45 @@ td {
     display: flex;
     justify-content: space-between;
   }
+}
+
+/* =========================================================
+   VISTA ADMIN - LISTA COMPACTA DE RESIDENTES POR PLAN
+   ========================================================= */
+.admin-plan-list {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px;
+    margin: 12px 0;
+    border: 1px solid #d9e2e5;
+}
+
+.admin-plan-list h3 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    color: #0f7b8c;
+}
+
+.admin-plan-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-plan-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 4px;
+    border-bottom: 1px solid #eef2f3;
+    font-size: 14px;
+}
+
+.admin-plan-list li:last-child {
+    border-bottom: none;
+}
+
+.admin-plan-list span {
+    color: #667;
+    font-size: 13px;
 }
