@@ -245,9 +245,9 @@ function crearSelectorTurnoSiNoExiste() {
   select.style.border = "1px solid #dde4ea";
 
   select.innerHTML = `
-    <option value="Mañana">Mañana · levantar</option>
-    <option value="Tarde">Tarde · atender</option>
-    <option value="Noche">Noche · acostar</option>
+    <option value="Mañana">Mañana</option>
+    <option value="Tarde">Tarde</option>
+    <option value="Noche">Noche</option>
   `;
 
   select.addEventListener("change", () => {

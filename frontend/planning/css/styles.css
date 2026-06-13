@@ -1,5 +1,5 @@
 /* ============================================================
-   ATENCIÓN FOCAL v2 — Hoja de estilos
+   Plannig — Hoja de estilos
    Paleta unificada con App de Deposiciones
    ============================================================ */
 
@@ -27,11 +27,32 @@
 }
 
 body {
-  font-family: -apple-system, system-ui, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.4;
 }
+
+/* ============================================================
+   BLOQUE: Tipografía uniforme en controles
+
+   Qué hace:
+   - Hace que botones, inputs, selects, textarea y tablas usen
+     la misma fuente que el resto del módulo.
+   - Evita diferencias visuales entre textos normales y controles.
+   ============================================================ */
+
+button,
+input,
+select,
+textarea,
+table {
+  font-family: inherit;
+}
+
+
 
 /* ── LOGIN SCREEN ─────────────────────────────────────────── */
 
