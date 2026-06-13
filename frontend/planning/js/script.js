@@ -32,12 +32,25 @@ let registros = [];
 
 const fechaHoy = new Date().toISOString().split("T")[0];
 
-const dateFull = new Date().toLocaleDateString("es-ES", {
-  weekday: "long",
-  day: "2-digit",
-  month: "long",
-  year: "numeric"
-});
+// ============================================================
+// BLOQUE: Fecha compacta para cabecera
+//
+// Qué hace:
+// - Genera una fecha corta para ahorrar espacio en móvil.
+// - Formato esperado: Dom 14/06/26.
+// - Mantiene la interfaz más limpia en cabecera.
+// ============================================================
+
+const fechaActual = new Date();
+
+const dateFull = fechaActual
+  .toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit"
+  })
+  .replace(".", "");
 
 
 // ============================================================
@@ -171,7 +184,7 @@ async function cargarDatos() {
 function prepararInterfazPlanning() {
   const displayDate = document.getElementById("displayDate");
   if (displayDate) {
-    displayDate.innerText = dateFull.toUpperCase();
+   displayDate.innerText = dateFull.charAt(0).toUpperCase() + dateFull.slice(1);
   }
 
   const s = sesion();
