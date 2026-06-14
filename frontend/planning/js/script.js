@@ -203,6 +203,16 @@ function prepararInterfazPlanning() {
   aplicarPermisosPorRol();
 }
 
+// ============================================================
+// BLOQUE: Aplicar permisos y datos de sesión por rol
+//
+// Qué hace:
+// - Muestra la sesión como badge debajo del título del módulo.
+// - No crea el botón Salir, porque ahora está fijo en planning.html.
+// - Oculta el bloque admin cuando el usuario no es administrador.
+// - Oculta controles antiguos de cambio de usuario si existen.
+// ============================================================
+
 function aplicarPermisosPorRol() {
   const s = sesion();
   const info = document.getElementById("planSesionInfo");
@@ -212,10 +222,6 @@ function aplicarPermisosPorRol() {
       <span class="session-badge ${s.rol === "admin" ? "is-admin" : "is-aux"}">
         ${s.rol === "admin" ? "Administrador" : escaparTexto(s.nombre || "Auxiliar")}
       </span>
-
-      <button type="button" class="btn-logout" onclick="auth.cerrarSesion('index.html')">
-        Salir
-      </button>
     `;
   }
 

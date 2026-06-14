@@ -5,129 +5,182 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning</title>
     <link rel="stylesheet" href="planning/css/styles.css">
-    <style>.btn-hub{position:fixed;top:12px;left:12px;background:rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.2);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;color:inherit;z-index:99;}@media print{.btn-hub{display:none;}}</style>
 </head>
 <body>
 
-<!-- Login gestionado por el hub -->
+<!-- ============================================================
+     BLOQUE: Pantalla principal del módulo Planning
 
-<!-- ══════════════════════════════════════════════════════════
-     APP PRINCIPAL
-     ══════════════════════════════════════════════════════════ -->
+     Qué hace:
+     - Contiene toda la interfaz visible del módulo Planning.
+     - El login se gestiona desde el hub/login general.
+     - El contenido se muestra cuando auth.verificarSesion() confirma sesión.
+     ============================================================ -->
+
 <div id="appScreen">
-<div class="main-container">
+    <div class="main-container">
 
-    <!-- Cabecera -->
-    <div class="app-topbar no-print" style="background:#0f7b8c; padding:10px 15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button class="btn-volver" onclick="window.location.href='menu-principal.html'"
-            style="font-size:12px;color:white;background:rgba(255,255,255,0.15);
-                   border:1px solid rgba(255,255,255,0.3);border-radius:20px;
-                   padding:4px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;">← Menú principal</button>
-        <h1 style="flex:1;color:white;font-size:16px;font-weight:700;text-align:center;
-                   text-transform:uppercase;letter-spacing:0.5px;margin:0;">Planning</h1>
-        <div id="planSesionInfo" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
-    </div>
+        <!-- ============================================================
+             BLOQUE: Cabecera Planning mobile first
 
-    <div class="header-info no-print">
-        <div class="header-left">
-            <div class="date-text" id="displayDate"></div>
-            
-        </div>
-        <div class="header-right">
-            <div class="plan-label">PLAN <span id="planLabelTop">A</span></div>
-           
-        </div>
-    </div>
+             Qué hace:
+             - Coloca navegación arriba: volver al menú y salir.
+             - Centra el nombre del módulo para mejorar jerarquía visual.
+             - Muestra el rol o nombre de sesión debajo del título.
+             - Evita estilos inline para que CSS controle todo el diseño.
+             ============================================================ -->
 
-    <!-- Tabs de plan -->
-    <div class="tabs no-print">
-        <button class="tab-btn active" onclick="setPlan('A')">A</button>
-        <button class="tab-btn" onclick="setPlan('B')">B</button>
-        <button class="tab-btn" onclick="setPlan('C')">C</button>
-        <button class="tab-btn" onclick="setPlan('D')">D</button>
-    </div>
+        <header class="planning-header no-print">
+            <div class="planning-header-actions">
+                <button class="btn-volver" type="button" onclick="window.location.href='menu-principal.html'">
+                    ← Menú principal
+                </button>
 
-    <!-- Gestión de lista permanente -->
-    <div class="collapsible-box no-print">
-        <div class="collapsible-header" onclick="toggleBox('adminBox')">
-            <span>⚙️ Asignar residentes al plan</span>
-            <span id="adminBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="adminBox">
-            <div class="form-box">
-                <input type="hidden" id="editId">
-                <input type="text" id="nombre" placeholder="Nombre completo del residente">
-                <input type="text" id="hab" placeholder="Habitación / Cama">
-                <select id="pañal">
-                    <option value="-">Pañal — sin cambio programado</option>
-                    <option value="S">Talla S</option>
-                    <option value="M">Talla M</option>
-                    <option value="L">Talla L</option>
-                    <option value="XL">Talla XL</option>
-                </select>
-                <input type="text" id="obs" placeholder="Observaciones permanentes">
-                <label class="option-check risk">
-                    <input type="checkbox" id="riesgo"> ⚠️ USUARIO DE RIESGO
-                </label>
-                <label class="option-check">
-                    <input type="checkbox" id="encamado"> 🛏️ USUARIO ENCAMADO
-                </label>
-                <button class="btn-save" onclick="guardarAsignacionPlan()">💾 ASIGNAR AL PLAN</button>
-            </div>
-            <div id="editList"></div>
-        </div>
-    </div>
-
-    
-    <!-- Checklist principal -->
-    <div id="checklist" class="no-print"></div>
-
-    <!-- Historial del día -->
-    <div class="history-box no-print">
-        <div class="history-header" onclick="toggleBox('historialBox')">
-            <span>📋 HISTORIAL DEL DÍA</span>
-            <span id="historialBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="historialBox">
-            <div style="padding: 10px 14px; display:flex; justify-content:flex-end;">
-                <button id="btnToggleMatrix" onclick="toggleMatrixView()"
-                    style="background:var(--primary-lt); color:var(--primary-dk); border:none;
-                           padding:8px 14px; border-radius:8px; cursor:pointer;
-                           font-size:0.82em; font-weight:700;">
-                    Ver Todos los Planes
+                <button class="btn-logout" type="button" onclick="auth.cerrarSesion('index.html')">
+                    Salir
                 </button>
             </div>
-            <table id="matrixTable">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Hab / Plan</th>
-                        <th>Residente</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+
+            <div class="planning-header-title">
+                <h1>Planning</h1>
+                <div id="planSesionInfo"></div>
+            </div>
+        </header>
+
+        <!-- ============================================================
+             BLOQUE: Franja fecha + plan
+
+             Qué hace:
+             - Mantiene la fecha y el plan actual en fondo blanco.
+             - Se conecta visualmente con la cabecera superior.
+             - Refuerza el contexto operativo del Planning.
+             ============================================================ -->
+
+        <div class="header-info no-print">
+            <div class="header-left">
+                <div class="date-text" id="displayDate"></div>
+            </div>
+
+            <div class="header-right">
+                <div class="plan-label">PLAN <span id="planLabelTop">A</span></div>
+            </div>
         </div>
+
+        <!-- ============================================================
+             BLOQUE: Contenedor de planes
+
+             Qué hace:
+             - El JavaScript genera dinámicamente los botones A, B, C, D y Alt.
+             - Se deja vacío para evitar duplicar planes si cambian desde PostgreSQL.
+             ============================================================ -->
+
+        <div class="tabs no-print"></div>
+
+        <!-- ============================================================
+             BLOQUE: Gestión admin de residentes asignados
+
+             Qué hace:
+             - Permite al admin asignar residentes a plan + turno.
+             - El contenido real del formulario lo construye planning/js/script.js.
+             ============================================================ -->
+
+        <div class="collapsible-box no-print">
+            <div class="collapsible-header" onclick="toggleBox('adminBox')">
+                <span>⚙️ Asignar residentes al plan</span>
+                <span id="adminBox-arrow">▼</span>
+            </div>
+
+            <div class="collapsible-content" id="adminBox">
+                <div class="form-box"></div>
+                <div id="editList"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             BLOQUE: Checklist principal
+
+             Qué hace:
+             - Admin ve resumen compacto.
+             - Auxiliar ve cards de pendientes y atendidos.
+             - El contenido se renderiza desde planning/js/script.js.
+             ============================================================ -->
+
+        <div id="checklist" class="no-print"></div>
+
+        <!-- ============================================================
+             BLOQUE: Historial del día
+
+             Qué hace:
+             - Muestra registros del día según turno y plan.
+             - Permite alternar entre plan actual y todos los planes.
+             ============================================================ -->
+
+        <div class="history-box no-print">
+            <div class="history-header" onclick="toggleBox('historialBox')">
+                <span>📋 HISTORIAL DEL DÍA</span>
+                <span id="historialBox-arrow">▼</span>
+            </div>
+
+            <div class="collapsible-content" id="historialBox">
+                <div class="history-actions">
+                    <button id="btnToggleMatrix" class="btn-history-toggle" type="button" onclick="toggleMatrixView()">
+                        Ver Todos los Planes
+                    </button>
+                </div>
+
+                <div class="history-table-wrap">
+                    <table id="matrixTable">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Hab / Plan</th>
+                                <th>Residente</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             BLOQUE: Reporte imprimible
+
+             Qué hace:
+             - Lanza preparación de reporte y usa impresión nativa.
+             - El área #printArea solo se muestra al imprimir.
+             ============================================================ -->
+
+        <div class="report-section no-print">
+            <button class="btn-report" type="button" onclick="prepararImpresion()">
+                🖨️ GENERAR REPORTE PARA IMPRIMIR
+            </button>
+        </div>
+
+        <div id="printArea" class="only-print"></div>
+
+        <!-- ============================================================
+             BLOQUE: Pie del módulo
+
+             Qué hace:
+             - Muestra créditos funcionales del proyecto.
+             ============================================================ -->
+
+        <div class="footer no-print">
+            Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: chatGPT Plus &nbsp;·&nbsp;
+        </div>
+
     </div>
+</div>
 
-    <!-- Botón de reporte -->
-    <div class="report-section no-print">
-        <button class="btn-report" onclick="prepararImpresion()">
-            🖨️ GENERAR REPORTE PARA IMPRIMIR
-        </button>
-    </div>
+<!-- ============================================================
+     BLOQUE: Scripts del módulo
 
-    <!-- Área de impresión (solo visible al imprimir) -->
-    <div id="printArea" class="only-print"></div>
-
-    <div class="footer no-print">
-        Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: chatGPT Plus &nbsp;·&nbsp; 
-    </div>
-
-</div><!-- /main-container -->
-</div><!-- /appScreen -->
-
-
+     Qué hace:
+     - auth.js controla sesión.
+     - api.js centraliza llamadas al backend.
+     - planning/js/script.js renderiza y gestiona Planning.
+     ============================================================ -->
 
 <script src="js/auth.js"></script>
 <script src="js/api.js"></script>

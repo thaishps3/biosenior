@@ -1,24 +1,59 @@
 /* ============================================================
-   Plannig — Hoja de estilos
-   Paleta unificada con App de Deposiciones
+   Planning — Hoja de estilos
+   Control BioSenior / SGP
+
+   Enfoque:
+   - Mobile first.
+   - Tipografía uniforme.
+   - Bloques comentados para ubicar rápido cada zona.
+   - Cabecera, fecha, turno y planes ocupan el ancho disponible.
+   ============================================================ */
+
+
+/* ============================================================
+   BLOQUE: Variables globales de color
+
+   Qué hace:
+   - Define la paleta visual del módulo Planning.
+   - Mantiene coherencia con BioSenior.
+   - Facilita ajustes futuros sin buscar colores por todo el CSS.
    ============================================================ */
 
 :root {
-  --primary:    #0f7b8c;   /* teal oscuro — color principal */
-  --primary-dk: #0a5f6e;   /* hover / activo */
-  --primary-lt: #e0f4f7;   /* fondo suave teal */
-  --success:    #2e7d5e;   /* verde — acción positiva */
+  --primary: #0f7b8c;
+  --primary-dk: #0a5f6e;
+  --primary-lt: #e0f4f7;
+
+  --success: #2e7d5e;
   --success-lt: #e8f5ef;
-  --warning:    #d4860b;   /* ámbar — alerta media */
+
+  --warning: #d4860b;
   --warning-lt: #fef3e0;
-  --danger:     #c0392b;   /* rojo ladrillo — alerta alta */
-  --danger-lt:  #fdecea;
-  --bg:         #f0f4f7;   /* fondo gris azulado */
-  --card:       #ffffff;
-  --text:       #1a2e35;
-  --muted:      #5a7a84;
-  --border:     #c9dde2;
+
+  --danger: #c0392b;
+  --danger-lt: #fdecea;
+
+  --bg: #f0f4f7;
+  --card: #ffffff;
+  --text: #1a2e35;
+  --muted: #5a7a84;
+  --border: #c9dde2;
+
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
 }
+
+
+/* ============================================================
+   BLOQUE: Reset y tipografía base
+
+   Qué hace:
+   - Elimina márgenes por defecto del navegador.
+   - Aplica una fuente uniforme a toda la pantalla.
+   - Hace que controles de formulario hereden la misma tipografía.
+   ============================================================ */
 
 * {
   box-sizing: border-box;
@@ -35,15 +70,6 @@ body {
   line-height: 1.4;
 }
 
-/* ============================================================
-   BLOQUE: Tipografía uniforme en controles
-
-   Qué hace:
-   - Hace que botones, inputs, selects, textarea y tablas usen
-     la misma fuente que el resto del módulo.
-   - Evita diferencias visuales entre textos normales y controles.
-   ============================================================ */
-
 button,
 input,
 select,
@@ -52,9 +78,19 @@ table {
   font-family: inherit;
 }
 
+button {
+  -webkit-tap-highlight-color: transparent;
+}
 
 
-/* ── LOGIN SCREEN ─────────────────────────────────────────── */
+/* ============================================================
+   BLOQUE: Login
+
+   Qué hace:
+   - Centra la tarjeta de login.
+   - Mantiene un diseño limpio y táctil.
+   - Usa la paleta principal del sistema.
+   ============================================================ */
 
 #loginScreen {
   display: flex;
@@ -67,13 +103,13 @@ table {
 }
 
 .login-card {
-  background: white;
-  border-radius: 20px;
-  padding: 36px 28px;
   width: 100%;
   max-width: 380px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: 36px 28px;
+  background: #ffffff;
+  border-radius: 20px;
   text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
 .login-logo {
@@ -82,28 +118,28 @@ table {
 }
 
 .login-title {
+  margin-bottom: 4px;
+  color: var(--primary);
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 4px;
 }
 
 .login-subtitle {
-  font-size: 0.82rem;
-  color: var(--muted);
   margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .login-card input {
   width: 100%;
+  margin-bottom: 14px;
   padding: 15px;
   border: 2px solid var(--border);
   border-radius: 10px;
   font-size: 1rem;
   outline: none;
-  margin-bottom: 14px;
   transition: border-color 0.2s;
 }
 
@@ -114,14 +150,14 @@ table {
 .btn-login {
   width: 100%;
   padding: 16px;
-  background: var(--primary);
-  color: white;
   border: none;
   border-radius: 10px;
+  background: var(--primary);
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
-  cursor: pointer;
   letter-spacing: 0.5px;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -131,18 +167,26 @@ table {
 
 .login-saved {
   margin-top: 18px;
-  font-size: 0.8em;
   color: var(--muted);
+  font-size: 0.8em;
 }
 
 .login-saved span {
   color: var(--primary);
-  font-weight: bold;
-  cursor: pointer;
+  font-weight: 700;
   text-decoration: underline;
+  cursor: pointer;
 }
 
-/* ── APP PRINCIPAL ────────────────────────────────────────── */
+
+/* ============================================================
+   BLOQUE: Layout principal mobile first
+
+   Qué hace:
+   - Define el área principal de la aplicación.
+   - Mantiene el contenido a ancho completo en móvil.
+   - En escritorio limita el ancho para no estirar demasiado.
+   ============================================================ */
 
 #appScreen {
   display: none;
@@ -156,101 +200,108 @@ table {
 }
 
 .app-title {
-  text-align: center;
+  margin: 8px 0 8px;
   color: var(--primary);
-  margin: 8px 0 4px;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 800;
+  text-align: center;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
 }
 
-/* ── CABECERA ─────────────────────────────────────────────── */
 
-.header-info {
+/* ============================================================
+   BLOQUE: Cabecera Planning mobile first
+
+   Qué hace:
+   - Separa navegación, título del módulo y sesión.
+   - Coloca "Menú principal" y "Salir" en una fila superior.
+   - Centra "Planning" para que no compita con los botones.
+   - Muestra el rol o nombre del usuario debajo del título.
+   - Evita estilos inline en el HTML.
+   ============================================================ */
+
+.planning-header {
+  width: 100%;
+  padding: 12px 14px 14px;
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.planning-header-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  background: var(--card);
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
-  border-left: 4px solid var(--primary);
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.date-text {
+.btn-volver {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--muted);
-  font-size: 0.82em;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.auxiliar-badge {
-  font-size: 0.78em;
-  color: var(--primary);
-  font-weight: 600;
+.btn-volver:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
-.header-right {
+.planning-header-title {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
 }
 
-.plan-label {
-  font-weight: 800;
-  color: var(--primary);
-  font-size: 1rem;
+.planning-header-title h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.btn-change-user {
-  font-size: 0.72em;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
 
 /* ============================================================
    BLOQUE: Sesión compacta en cabecera
 
    Qué hace:
-   - Muestra el rol o nombre del usuario de forma compacta.
-   - Evita textos redundantes como "Admin BioSenior - Admin".
-   - Da estilo uniforme al botón Salir.
-   - Prioriza diseño mobile first.
+   - Muestra "Administrador" o el nombre de la auxiliar.
+   - Mantiene la sesión como información secundaria.
+   - No muestra el botón Salir aquí porque ya está en la fila superior.
    ============================================================ */
 
 #planSesionInfo {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 .session-badge {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
   white-space: nowrap;
 }
 
 .session-badge.is-admin {
-  background: #fef3e2;
+  background: #fff7e8;
   color: #7a4a00;
 }
 
@@ -261,62 +312,80 @@ table {
 
 .btn-logout {
   min-height: 32px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: #ffffff;
   color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .btn-logout:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--primary-dk);
+  color: #ffffff;
+  border-color: var(--primary-dk);
 }
-/* ── TABS DE PLAN ─────────────────────────────────────────── */
+
 
 /* ============================================================
-   BLOQUE: Botones de planes mobile first
+   BLOQUE: Franja fecha + plan
 
    Qué hace:
-   - Mantiene los planes compactos.
-   - Permite que A, B, C, D y Alt entren mejor en móvil.
-   - Mantiene la barra visible al hacer scroll.
-   - Evita duplicidad de estilos entre grid y flex.
+   - Mantiene fecha y plan en fondo original blanco.
+   - Se conecta visualmente con la cabecera verde superior.
+   - Ocupa todo el ancho del contenedor.
    ============================================================ */
 
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+.header-info {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 14px;
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 20;
-  padding: 5px 0;
+  padding: 12px 14px;
+  background: var(--card);
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  border-left: none;
 }
 
-.tab-btn {
-  min-height: 42px;
-  padding: 8px 6px;
-  border: none;
-  background: #d1e4e8;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
+.header-left,
+.header-right {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  justify-content: flex-end;
+}
+
+.date-text {
   color: var(--muted);
-  transition: all 0.2s;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.tab-btn.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: 0 4px 10px rgba(15, 123, 140, 0.35);
+.auxiliar-badge {
+  display: none;
+}
+
+.plan-label {
+  color: var(--primary);
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.btn-change-user {
+  display: none;
 }
 
 
@@ -324,12 +393,13 @@ table {
    BLOQUE: Barra de contexto Turno + Plan
 
    Qué hace:
-   - Agrupa visualmente el selector de turno con los planes.
-   - Refuerza la lógica funcional: Turno + Plan.
-   - Prioriza diseño mobile first.
+   - Agrupa visualmente el turno con los planes.
+   - Refuerza la regla funcional: Turno + Plan.
+   - Ocupa todo el ancho disponible en móvil.
    ============================================================ */
 
 .planning-context-bar {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -337,9 +407,9 @@ table {
 }
 
 .planning-context-label {
+  color: var(--muted);
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -350,82 +420,160 @@ table {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: #ffffff;
   color: var(--text);
   font-size: 1rem;
   font-weight: 600;
+  outline: none;
 }
 
-/* ── COLLAPSIBLE ──────────────────────────────────────────── */
+.turno-select:focus {
+  border-color: var(--primary);
+}
+
+
+/* ============================================================
+   BLOQUE: Botones de planes mobile first
+
+   Qué hace:
+   - Muestra A, B, C, D y Alt en una sola fila.
+   - Mantiene la barra visible al hacer scroll.
+   - Evita duplicidad de estilos entre grid y flex.
+   ============================================================ */
+
+.tabs {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 5px 0;
+  background: var(--bg);
+}
+
+.tab-btn {
+  min-height: 42px;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 10px;
+  background: #d1e4e8;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 123, 140, 0.35);
+}
+
+
+/* ============================================================
+   BLOQUE: Cajas colapsables
+
+   Qué hace:
+   - Agrupa secciones como ajustes de admin.
+   - Permite ocultar información secundaria en móvil.
+   ============================================================ */
 
 .collapsible-box {
-  background: var(--primary-dk);
-  border-radius: 12px;
-  margin-bottom: 14px;
-  overflow: hidden;
   width: 100%;
+  margin-bottom: 14px;
+  background: var(--primary-dk);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .collapsible-header {
-  padding: 14px 16px;
-  color: white;
-  cursor: pointer;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-weight: 600;
+  justify-content: space-between;
+  padding: 14px 16px;
+  color: #ffffff;
   font-size: 0.9em;
+  font-weight: 700;
   letter-spacing: 0.3px;
+  cursor: pointer;
 }
 
 .collapsible-content {
   max-height: 0;
   overflow: hidden;
+  background: #ffffff;
   transition: max-height 0.35s ease-out;
-  background: white;
 }
 
 .collapsible-content.open {
   max-height: 2400px;
 }
 
-/* ── FORMULARIO GESTIÓN ───────────────────────────────────── */
+
+/* ============================================================
+   BLOQUE: Formulario admin
+
+   Qué hace:
+   - Ordena los campos en columna.
+   - Usa controles grandes para móvil.
+   - Mantiene edición/asignación legible.
+   ============================================================ */
 
 .form-box {
-  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 11px;
+  padding: 18px;
+}
+
+.form-box label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 input[type="text"],
+input[type="number"],
 input[type="file"],
-select {
+select,
+textarea {
   width: 100%;
   padding: 13px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
   font-size: 15px;
   outline: none;
-  color: var(--text);
   transition: border-color 0.2s;
 }
 
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
 input[type="text"]:focus,
-select:focus {
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
   border-color: var(--primary);
 }
 
+.checkline,
 .option-check {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px;
   background: #f7fafb;
-  border-radius: 8px;
   border: 1.5px solid var(--border);
-  cursor: pointer;
+  border-radius: 8px;
   font-size: 0.9em;
+  cursor: pointer;
 }
 
 .option-check.risk {
@@ -435,146 +583,354 @@ select:focus {
   font-weight: 700;
 }
 
-.btn-save {
-  background: var(--success);
-  color: white;
-  border: none;
+.btn-save,
+.form-box button {
+  width: 100%;
   padding: 15px;
-  border-radius: 9px;
-  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--success);
+  color: #ffffff;
   font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.btn-save:hover {
+.btn-save:hover,
+.form-box button:hover {
   background: #235f47;
 }
 
 
-/* ── USER CARDS ───────────────────────────────────────────── */
+/* ============================================================
+   BLOQUE: Listas y secciones de residentes
+
+   Qué hace:
+   - Separa visualmente pendientes y atendidos.
+   - Mantiene listas limpias en móvil.
+   ============================================================ */
+
+.section-group {
+  margin-bottom: 16px;
+}
+
+.section-group h3 {
+  margin: 10px 0 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.done-list {
+  opacity: 0.95;
+}
+
+.empty-state {
+  padding: 30px;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  font-size: 0.88em;
+  text-align: center;
+}
+
+.section-divider {
+  padding: 18px 8px 8px;
+  color: var(--muted);
+  font-size: 0.72em;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+/* ============================================================
+   BLOQUE: Cards operativas de residentes
+
+   Qué hace:
+   - Da al auxiliar tarjetas táctiles y legibles.
+   - Muestra riesgo, encamado, pañal, observación e incidencia.
+   - Diferencia pendientes y atendidos.
+   ============================================================ */
 
 .user-card {
-  background: var(--card);
-  margin-bottom: 10px;
-  padding: 16px 18px;
-  border-radius: 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 0;
+  padding: 14px;
+  background: var(--card);
   border-left: 7px solid var(--border);
-  transition: opacity 0.2s;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.user-card:active {
+  transform: scale(0.99);
 }
 
 .user-card.is-risk {
-  border-left-color: var(--danger);
   background: var(--danger-lt);
+  border-left-color: var(--danger);
 }
 
 .user-card.checked {
-  border-left-color: var(--success);
   background: var(--success-lt);
-  opacity: 0.75;
+  border-left-color: var(--success);
+  opacity: 0.78;
 }
 
+.card-check {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  color: var(--success);
+  font-weight: 800;
+}
+
+.user-card.checked .card-check {
+  border-color: var(--success);
+  background: #ffffff;
+}
+
+.card-main,
 .user-info {
-  flex-grow: 1;
+  min-width: 0;
+  flex: 1;
 }
 
+.card-main strong,
 .user-info strong {
   display: block;
-  font-size: 1.05rem;
   margin-bottom: 2px;
+  color: var(--text);
+  font-size: 1.02rem;
 }
 
+.card-main span,
 .user-info small {
   color: var(--muted);
   font-size: 0.88rem;
 }
 
-.badge {
-  display: inline-block;
-  font-size: 0.72rem;
-  padding: 3px 8px;
-  border-radius: 5px;
-  margin: 3px 3px 0 0;
-  font-weight: 600;
+.obs {
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 0.86rem;
 }
 
-.badge-risk  { background: var(--danger);     color: white; }
-.badge-cama  { background: #dce8ec;            color: var(--primary-dk); }
-.badge-pañal { background: var(--primary-lt);  color: var(--primary-dk); }
-.badge-done  { background: var(--success-lt);  color: var(--success); }
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dce8ec;
+  color: var(--primary-dk);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.badge.danger,
+.badge-risk {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.badge.ok,
+.badge-done {
+  background: var(--success-lt);
+  color: var(--success);
+}
+
+.badge-cama {
+  background: #dce8ec;
+  color: var(--primary-dk);
+}
+
+.badge-pañal {
+  background: var(--primary-lt);
+  color: var(--primary-dk);
+}
+
+.incidencia,
 .incidencia-txt {
+  margin-top: 6px;
   color: var(--danger);
-  font-size: 0.8em;
-  margin-top: 5px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.btn-incidencia,
+.btn-nota {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-incidencia:hover,
+.btn-nota:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .check-round {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   accent-color: var(--success);
   cursor: pointer;
+}
+
+
+/* ============================================================
+   BLOQUE: Vista admin compacta
+
+   Qué hace:
+   - Muestra residentes asignados sin cards operativas.
+   - Reduce ruido visual para el rol administrador.
+   - Mantiene acciones de editar y retirar.
+   ============================================================ */
+
+.admin-plan-summary,
+.admin-plan-list {
+  width: 100%;
+  margin: 12px 0;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #d9e2e5;
+  border-radius: var(--radius-lg);
+}
+
+.admin-plan-summary h3,
+.admin-plan-list h3 {
+  margin-bottom: 10px;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.admin-plan-summary ul,
+.admin-plan-list ul {
+  list-style: none;
+}
+
+.admin-plan-summary li,
+.admin-plan-list li {
+  padding: 8px 4px;
+  border-bottom: 1px solid #eef2f3;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.admin-plan-summary li:last-child,
+.admin-plan-list li:last-child {
+  border-bottom: none;
+}
+
+.admin-plan-list span {
+  color: #667;
+  font-size: 0.82rem;
+}
+
+.edit-row,
+.edit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 0.9em;
+}
+
+.edit-row span,
+.edit-item span {
+  min-width: 0;
+  flex: 1;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
   flex-shrink: 0;
 }
 
-.btn-nota {
-  background: none;
-  border: none;
-  font-size: 1.15rem;
+.edit-actions button {
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
   cursor: pointer;
-  padding: 4px 6px;
-  flex-shrink: 0;
-  opacity: 0.7;
 }
 
-.btn-nota:hover {
-  opacity: 1;
-}
 
-.empty-state {
-  text-align: center;
-  padding: 30px;
-  color: var(--muted);
-  font-size: 0.88em;
-  background: var(--card);
-  border-radius: 12px;
-  border: 2px dashed var(--border);
-}
+/* ============================================================
+   BLOQUE: Historial
 
-.section-divider {
-  padding: 18px 8px 8px;
-  font-size: 0.72em;
-  color: var(--muted);
-  text-align: center;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-/* ── HISTORIAL ────────────────────────────────────────────── */
+   Qué hace:
+   - Muestra registros del día.
+   - Mantiene tabla funcional en móvil con scroll si hace falta.
+   - Puede evolucionar luego a cards compactas.
+   ============================================================ */
 
 .history-box {
-  background: var(--card);
-  border-radius: 12px;
+  width: 100%;
   margin-top: 14px;
+  background: var(--card);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .history-header {
-  background: var(--muted);
-  color: white;
-  padding: 13px 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  cursor: pointer;
-  font-weight: 600;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: var(--muted);
+  color: #ffffff;
   font-size: 0.9em;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.history-box table {
+  min-width: 460px;
+}
+
+.history-box {
+  overflow-x: auto;
 }
 
 table {
@@ -593,12 +949,19 @@ th {
 th,
 td {
   padding: 11px 12px;
-  text-align: left;
   border-bottom: 1px solid #edf2f4;
   font-size: 0.84em;
+  text-align: left;
 }
 
-/* ── BOTÓN REPORTE ────────────────────────────────────────── */
+
+/* ============================================================
+   BLOQUE: Reporte e impresión desde pantalla
+
+   Qué hace:
+   - Da estilo al botón de reporte.
+   - Mantiene la acción visible y táctil.
+   ============================================================ */
 
 .report-section {
   margin-top: 14px;
@@ -607,14 +970,14 @@ td {
 .btn-report {
   width: 100%;
   padding: 16px;
-  background: var(--primary-dk);
-  color: white;
   border: none;
   border-radius: 11px;
-  font-weight: 700;
-  cursor: pointer;
+  background: var(--primary-dk);
+  color: #ffffff;
   font-size: 1rem;
+  font-weight: 700;
   letter-spacing: 0.4px;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -622,40 +985,43 @@ td {
   background: #084f5a;
 }
 
-/* ── ITEMS DE EDICIÓN ─────────────────────────────────────── */
-
-.edit-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 11px 18px;
-  border-bottom: 1px solid #eee;
-  font-size: 0.9em;
-}
-
-/* ── FOOTER ───────────────────────────────────────────────── */
-
-.footer {
-  margin-top: 28px;
-  padding: 18px;
-  text-align: center;
-  font-size: 0.82em;
-  color: var(--muted);
-  border-top: 1px solid var(--border);
-}
-
-/* ── SOLO PANTALLA ────────────────────────────────────────── */
-
 .only-print {
   display: none;
 }
 
-/* ── IMPRESIÓN ────────────────────────────────────────────── */
+
+/* ============================================================
+   BLOQUE: Footer
+
+   Qué hace:
+   - Muestra información secundaria al final.
+   - Mantiene separación visual del contenido operativo.
+   ============================================================ */
+
+.footer {
+  margin-top: 28px;
+  padding: 18px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82em;
+  text-align: center;
+}
+
+
+/* ============================================================
+   BLOQUE: Impresión
+
+   Qué hace:
+   - Oculta elementos interactivos.
+   - Muestra solo reporte imprimible.
+   - Mantiene impresión nativa del navegador.
+   ============================================================ */
 
 @media print {
   #loginScreen,
   .no-print,
   .tabs,
+  .planning-context-bar,
   .collapsible-box,
   .header-info,
   .footer,
@@ -677,8 +1043,8 @@ td {
   }
 
   body {
-    background: white !important;
-    color: black !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 
   .main-container {
@@ -686,90 +1052,84 @@ td {
   }
 
   .report-header {
-    text-align: center;
     margin-bottom: 18px;
     padding-bottom: 12px;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid #000000;
+    text-align: center;
   }
 
   .report-header h2 {
-    font-size: 15pt;
     margin-bottom: 4px;
+    font-size: 15pt;
   }
 
   .report-header p {
-    font-size: 10pt;
     margin: 2px 0;
+    font-size: 10pt;
   }
 
   .report-table {
     width: 100%;
-    border-collapse: collapse;
     margin-top: 8px;
+    border-collapse: collapse;
   }
 
   .report-table th,
   .report-table td {
-    border: 1px solid #333 !important;
     padding: 7px 9px;
+    border: 1px solid #333333 !important;
     font-size: 10pt;
     text-align: left;
   }
 
   .report-table th {
     background: #e8e8e8 !important;
-    font-weight: bold;
+    font-weight: 700;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
   .sign-block {
-    margin-top: 36px;
-    border-top: 1px solid #000;
-    padding-top: 10px;
-    font-size: 10pt;
     display: flex;
     justify-content: space-between;
+    margin-top: 36px;
+    padding-top: 10px;
+    border-top: 1px solid #000000;
+    font-size: 10pt;
   }
 }
 
-/* =========================================================
-   VISTA ADMIN - LISTA COMPACTA DE RESIDENTES POR PLAN
-   ========================================================= */
-.admin-plan-list {
-    background: #ffffff;
-    border-radius: 14px;
-    padding: 14px;
-    margin: 12px 0;
-    border: 1px solid #d9e2e5;
-}
 
-.admin-plan-list h3 {
-    margin: 0 0 10px 0;
-    font-size: 15px;
-    color: #0f7b8c;
-}
+/* ============================================================
+   BLOQUE: Ajustes para pantallas medianas y escritorio
 
-.admin-plan-list ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+   Qué hace:
+   - Mantiene mobile first como base.
+   - Solo amplía ligeramente contenedor y espaciados en escritorio.
+   ============================================================ */
 
-.admin-plan-list li {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 4px;
-    border-bottom: 1px solid #eef2f3;
-    font-size: 14px;
-}
+@media (min-width: 700px) {
+  #appScreen {
+    padding: 20px;
+  }
 
-.admin-plan-list li:last-child {
-    border-bottom: none;
-}
+  .main-container {
+    max-width: 680px;
+  }
 
-.admin-plan-list span {
-    color: #667;
-    font-size: 13px;
+  .app-title {
+    font-size: 1.7rem;
+  }
+
+  .planning-header {
+    padding: 14px 18px 16px;
+  }
+
+  .header-info {
+    padding: 12px 18px;
+  }
+
+  .tab-btn {
+    font-size: 1rem;
+  }
 }
