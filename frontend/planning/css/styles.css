@@ -650,30 +650,183 @@ textarea:focus {
 
 
 /* ============================================================
-   BLOQUE: Cards operativas de residentes
+   BLOQUE: Filas compactas de residentes mobile first
 
    Qué hace:
-   - Da al auxiliar tarjetas táctiles y legibles.
-   - Muestra riesgo, encamado, pañal, observación e incidencia.
-   - Diferencia pendientes y atendidos.
+   - Sustituye las cards grandes por filas operativas compactas.
+   - Permite ver 10 residentes por plan con menos scroll.
+   - Mantiene una zona táctil suficiente para marcar/desmarcar.
+   - Muestra habitación, nombre, estado, alertas e incidencia.
+   ============================================================ */
+
+.section-group {
+  margin-bottom: 12px;
+}
+
+.section-group h3 {
+  margin: 8px 0 7px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.done-list {
+  opacity: 0.96;
+}
+
+.resident-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 7px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.12s, opacity 0.2s;
+}
+
+.resident-row:active {
+  transform: scale(0.99);
+}
+
+.resident-row.is-risk {
+  background: #fff8f7;
+  border-left-color: var(--danger);
+}
+
+.resident-row.is-done {
+  background: var(--success-lt);
+  border-left-color: var(--success);
+  opacity: 0.94;
+}
+
+.resident-row-check {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--success);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.resident-row.is-done .resident-row-check {
+  background: var(--success);
+  border-color: var(--success);
+  color: #ffffff;
+}
+
+.resident-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.resident-row-title strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.93rem;
+  font-weight: 850;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resident-row-detail {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.18;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resident-row-side {
+  width: 78px;
+  min-width: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+}
+
+.resident-row-time {
+  color: var(--success);
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.resident-row-action {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.btn-incidencia,
+.btn-nota {
+  min-height: 25px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-incidencia:hover,
+.btn-nota:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ============================================================
+   BLOQUE: Compatibilidad con cards antiguas
+
+   Qué hace:
+   - Mantiene estilos mínimos por si alguna vista antigua aún usa
+     user-card, badge o check-round.
+   - No afecta a la nueva lista compacta porque el JS actual usa
+     resident-row.
    ============================================================ */
 
 .user-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  margin-bottom: 0;
-  padding: 14px;
+  padding: 10px 12px;
   background: var(--card);
-  border-left: 7px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.user-card:active {
-  transform: scale(0.99);
+  border-left: 5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .user-card.is-risk {
@@ -684,68 +837,18 @@ textarea:focus {
 .user-card.checked {
   background: var(--success-lt);
   border-left-color: var(--success);
-  opacity: 0.78;
-}
-
-.card-check {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--border);
-  border-radius: 50%;
-  color: var(--success);
-  font-weight: 800;
-}
-
-.user-card.checked .card-check {
-  border-color: var(--success);
-  background: #ffffff;
-}
-
-.card-main,
-.user-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.card-main strong,
-.user-info strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text);
-  font-size: 1.02rem;
-}
-
-.card-main span,
-.user-info small {
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.obs {
-  margin-top: 5px;
-  color: var(--text);
-  font-size: 0.86rem;
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+  opacity: 0.9;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
   background: #dce8ec;
   color: var(--primary-dk);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
 .badge.danger,
@@ -760,47 +863,9 @@ textarea:focus {
   color: var(--success);
 }
 
-.badge-cama {
-  background: #dce8ec;
-  color: var(--primary-dk);
-}
-
-.badge-pañal {
-  background: var(--primary-lt);
-  color: var(--primary-dk);
-}
-
-.incidencia,
-.incidencia-txt {
-  margin-top: 6px;
-  color: var(--danger);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.btn-incidencia,
-.btn-nota {
-  flex-shrink: 0;
-  min-height: 34px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.btn-incidencia:hover,
-.btn-nota:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
 .check-round {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   accent-color: var(--success);
   cursor: pointer;

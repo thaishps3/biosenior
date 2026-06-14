@@ -986,90 +986,87 @@ function renderHistorial() {
 
 
 // ============================================================
-// BLOQUE: Crear tarjeta de residente
+// BLOQUE: Crear fila compacta de residente
 //
 // Qué hace:
-// - Construye card visual para auxiliar.
-// - Muestra riesgo, encamado, pañal, hora e incidencia.
-// - Permite marcar/desmarcar atención al hacer clic.
+// - Crea una fila operativa compacta para móvil.
+// - Toda la fila permite marcar/desmarcar atención.
+// - Mantiene visible habitación, nombre, alertas y hora.
+// - El botón Incidencia queda separado para no activar el check.
+// - Sustituye las cards grandes por filas táctiles más eficientes.
 // ============================================================
 
 function crearTarjetaResidente(r) {
-  const card = document.createElement("div");
+  const fila = document.createElement("div");
   const registro = registroDelResidente(r.id_residente);
-  const done = !!registro;
+  const atendido = !!registro;
 
-  card.className = `user-card ${r.riesgo ? "is-risk" : ""} ${
-    done ? "checked" : ""
+  fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${
+    atendido ? "is-done" : ""
   }`;
-
-  let badges = "";
-
-  if (r.riesgo) {
-    badges += `<span class="badge danger">⚠️ RIESGO</span>`;
-  }
-
-  if (r.encamado) {
-    badges += `<span class="badge">🛏️ Encamado</span>`;
-  }
-
-  if (r.panal && r.panal !== "-") {
-    badges += `<span class="badge">Pañal ${escaparTexto(r.panal)}</span>`;
-  }
-
-  if (done && registro?.hora) {
-    badges += `<span class="badge ok">✓ ${escaparTexto(registro.hora)}</span>`;
-  }
 
   const nombre = r.residente_nombre || "Sin nombre";
   const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
+  const habitacion = r.habitacion || "-";
 
-  const obsHtml = r.observacion
-    ? `<p class="obs">${escaparTexto(r.observacion)}</p>`
+  const detalles = [];
+
+  if (r.riesgo) {
+    detalles.push("⚠️ Riesgo");
+  }
+
+  if (r.encamado) {
+    detalles.push("🛏️ Encamado");
+  }
+
+  if (r.panal && r.panal !== "-") {
+    detalles.push(`Pañal ${r.panal}`);
+  }
+
+  if (r.observacion) {
+    detalles.push(r.observacion);
+  }
+
+  if (registro?.incidencia) {
+    detalles.push(`⚠️ ${registro.incidencia}`);
+  }
+
+  const detalleHtml = detalles.length
+    ? `<div class="resident-row-detail">${escaparTexto(detalles.join(" · "))}</div>`
     : "";
 
-  const incHtml = registro?.incidencia
-    ? `
-      <p class="incidencia">
-        ⚠️ Incidencia: ${escaparTexto(registro.incidencia)}
-      </p>
-    `
-    : "";
+  const estadoHtml = atendido
+    ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
+    : `<span class="resident-row-action">Pendiente</span>`;
 
-  const badgesHtml = badges
-    ? `
-      <div class="badges">
-        ${badges}
+  fila.innerHTML = `
+    <div class="resident-row-check">
+      ${atendido ? "✓" : ""}
+    </div>
+
+    <div class="resident-row-main">
+      <div class="resident-row-title">
+        <strong>${escaparTexto(habitacion)} · ${escaparTexto(nombre + apellidos)}</strong>
       </div>
-    `
-    : "";
 
-  card.innerHTML = `
-    <div class="card-check">
-      ${done ? "✓" : ""}
+      ${detalleHtml}
     </div>
 
-    <div class="card-main">
-      <strong>${escaparTexto(nombre + apellidos)}</strong>
-      <span>Hab ${escaparTexto(r.habitacion || "-")}</span>
-      ${obsHtml}
-      ${badgesHtml}
-      ${incHtml}
-    </div>
+    <div class="resident-row-side">
+      ${estadoHtml}
 
-    <button type="button" class="btn-incidencia" onclick="addIncidencia(${r.id_residente})">
-      Incidencia
-    </button>
+      <button type="button" class="btn-incidencia" onclick="addIncidencia(${r.id_residente})">
+        Incidencia
+      </button>
+    </div>
   `;
 
-  card.addEventListener("click", (event) => {
+  fila.addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
-    if (event.target.closest("input")) return;
-
     toggleCheck(r.id_residente);
   });
 
-  return card;
+  return fila;
 }
 
 
