@@ -1228,3 +1228,65 @@ td {
 #matrixTable td {
   white-space: nowrap;
 }
+
+
+/* ============================================================
+   BLOQUE: Atendidos más compacto
+
+   Qué hace:
+   - Reduce la altura visual de los residentes ya atendidos.
+   - Mantiene Pendientes más visible y operativo.
+   ============================================================ */
+
+.atendidos-section .resident-row {
+  min-height: 44px;
+  padding: 6px 8px;
+  margin-bottom: 5px;
+  opacity: 0.9;
+}
+
+.atendidos-section .resident-row-check {
+  width: 23px;
+  height: 23px;
+  min-width: 23px;
+  font-size: 0.82rem;
+}
+
+.atendidos-section .resident-row-title strong {
+  font-size: 0.86rem;
+}
+
+.atendidos-section .resident-row-detail {
+  font-size: 0.66rem;
+  margin-top: 1px;
+}
+
+.atendidos-section .resident-row-side {
+  min-width: 44px;
+  gap: 2px;
+}
+
+.atendidos-section .btn-incidencia,
+.atendidos-section .btn-nota {
+  min-height: 22px;
+  padding: 3px 6px;
+  font-size: 0.62rem;
+}
+
+/* ============================================================
+   BLOQUE: Título compacto de Atendidos
+
+   Qué hace:
+   - Muestra el total de atendidos en la cabecera del bloque.
+   - Evita contador visual pesado.
+   - Centra el texto para separar claramente Pendientes de Atendidos.
+   ============================================================ */
+
+.atendidos-title {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--success);
+  margin: 8px 0 8px;
+}

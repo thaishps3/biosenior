@@ -201,6 +201,29 @@ function prepararInterfazPlanning() {
   crearSelectorTurnoSiNoExiste();
   prepararFormularioAsignacion();
   aplicarPermisosPorRol();
+
+    // ============================================================
+  // BLOQUE: Permisos sobre historial del día
+  //
+  // Qué hace:
+  // - Oculta el historial diario para auxiliares.
+  // - Mantiene el historial visible para administrador.
+  // - Reduce información innecesaria en la vista operativa móvil.
+  // ============================================================
+
+  const historialBox = document.getElementById("historialBox");
+
+  if (historialBox) {
+    const contenedorHistorial =
+      historialBox.closest(".section-group") ||
+      historialBox.closest(".history-section") ||
+      historialBox.closest(".history-box") ||
+      historialBox.parentElement;
+
+    if (contenedorHistorial) {
+      contenedorHistorial.style.display = esAdmin() ? "block" : "none";
+    }
+  }
 }
 
 // ============================================================
@@ -843,6 +866,7 @@ function renderChecklist() {
   ? `
     <section class="section-group pendientes-section">
   <h3>Pendientes</h3>
+  
   <div id="listaPendientes" class="cards-list"></div>
 </section>
   `
@@ -851,7 +875,7 @@ function renderChecklist() {
 const bloqueAtendidos = atendidos.length
   ? `
     <section class="section-group atendidos-section">
-  <h3>Atendidos</h3>
+  <h3 class="atendidos-title">✓ ATENDIDOS (${atendidos.length})</h3>
   <div id="listaAtendidos" class="cards-list done-list"></div>
 </section>
   `
