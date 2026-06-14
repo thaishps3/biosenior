@@ -1516,3 +1516,21 @@ td {
   margin-top: 2px !important;
   line-height: 1.15 !important;
 }
+
+/* ============================================================
+   BLOQUE: Resaltar residentes de riesgo en Pendientes
+
+   Qué hace:
+   - Tiñe suavemente de rosa los cards pendientes de riesgo.
+   - Mantiene el borde izquierdo más visible.
+   - Ayuda a identificar prioridades sin saturar la pantalla.
+   ============================================================ */
+
+.pendientes-section .resident-row.is-pending.is-risk {
+  background: #fff5f7 !important;
+  border-left-color: #e2556f !important;
+}
+
+.pendientes-section .resident-row.is-pending.is-risk .resident-row-title strong {
+  color: #7f1d1d;
+}

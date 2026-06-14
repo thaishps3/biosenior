@@ -875,9 +875,15 @@ function renderChecklist() {
 
   contenedor.style.display = "block";
 
-  const pendientes = residentesPlan.filter(
-    (r) => !registroDelResidente(r.id_residente)
-  );
+  const pendientes = residentesPlan
+  .filter((r) => !registroDelResidente(r.id_residente))
+  .sort((a, b) => {
+    if (a.riesgo === b.riesgo) {
+      return Number(a.orden || 999) - Number(b.orden || 999);
+    }
+
+    return a.riesgo ? -1 : 1;
+  });
 
   const atendidos = residentesPlan.filter((r) =>
     registroDelResidente(r.id_residente)
