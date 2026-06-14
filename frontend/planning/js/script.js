@@ -694,56 +694,66 @@ async function toggleCheck(idResidente) {
 
 
 // ============================================================
-// BLOQUE: Registrar incidencia
+// BLOQUE: Registrar nota/incidencia
 //
 // Qué hace:
-// - Permite agregar incidencia u observación al residente.
-// - Si no existe registro, primero lo crea.
-// - Usa la acción correspondiente al turno actual.
+// - Permite agregar una nota al residente.
+// - Si ya existe una nota previa, NO la borra.
+// - Agrega la nueva nota debajo de la anterior.
+// - Si el residente aún no está atendido, crea el registro.
+// - Si ya está atendido, actualiza el registro existente.
 // ============================================================
 
-async function addIncidencia(idResidente) {
+function addIncidencia(idResidente) {
   const plan = getPlanActual();
   const s = sesion();
 
   if (!plan || !s) return;
 
-  let registro = registroDelResidente(idResidente);
+  const registro = registroDelResidente(idResidente);
+  const notaAnterior = registro?.incidencia || "";
 
-  const texto = prompt(
-    "Incidencia u observación:",
-    registro?.incidencia || ""
-  );
+  const nuevaNota = prompt("Escribe la nueva nota:");
 
-  if (texto === null) return;
+  if (nuevaNota === null) return;
 
-  try {
-    if (!registro) {
-      await api.crearPlanningRegistro({
+  const textoLimpio = nuevaNota.trim();
+
+  if (!textoLimpio) return;
+
+  const horaNota = new Date().toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const notaFinal = notaAnterior
+    ? `${notaAnterior}\n${horaNota} - ${textoLimpio}`
+    : `${horaNota} - ${textoLimpio}`;
+
+  const guardarNota = registro?.id_registro
+    ? api.editarPlanningRegistro(registro.id_registro, {
+        incidencia: notaFinal,
+        observacion: registro.observacion || null,
+        realizado: true
+      })
+    : api.crearPlanningRegistro({
         id_plan: plan.id_plan,
         id_residente: idResidente,
         id_usuario: s.id_usuario,
         fecha: fechaHoy,
         turno: currentTurno,
         accion: accionPorTurno(currentTurno),
-        incidencia: texto
+        incidencia: notaFinal
       });
-    } else {
-      await api.editarPlanningRegistro(registro.id_registro, {
-        incidencia: texto,
-        observacion: registro.observacion || null,
-        realizado: true
-      });
-    }
 
-    await cargarDatos();
-    render();
-  } catch (error) {
-    console.error(error);
-    alert(error.message || "No se pudo guardar la incidencia.");
-  }
+  guardarNota
+    .then(() => cargarDatos())
+    .then(() => render())
+    .catch((error) => {
+      console.error(error);
+      alert(error.message || "No se pudo guardar la nota.");
+    });
 }
-
 
 // ============================================================
 // BLOQUE: Alternar historial todos los planes / plan actual
@@ -792,6 +802,17 @@ function render() {
 // Qué hace:
 // - Admin ve lista compacta informativa.
 // - Auxiliar ve cards operativas.
+// - Siempre filtra por plan actual y turno actual.
+// ============================================================
+
+// ============================================================
+// BLOQUE: Render de pendientes y atendidos
+//
+// Qué hace:
+// - Admin ve lista compacta informativa.
+// - Auxiliar ve cards operativas.
+// - Pendientes no muestra contador.
+// - Atendidos muestra contador limpio en el título.
 // - Siempre filtra por plan actual y turno actual.
 // ============================================================
 
@@ -863,43 +884,42 @@ function renderChecklist() {
   );
 
   const bloquePendientes = pendientes.length
-  ? `
-    <section class="section-group pendientes-section">
-  <h3>Pendientes</h3>
-  
-  <div id="listaPendientes" class="cards-list"></div>
-</section>
-  `
-  : "";
+    ? `
+      <section class="section-group pendientes-section">
+        <h3>Pendientes</h3>
+        <div id="listaPendientes" class="cards-list"></div>
+      </section>
+    `
+    : "";
 
-const bloqueAtendidos = atendidos.length
-  ? `
-    <section class="section-group atendidos-section">
-  <h3 class="atendidos-title">✓ ATENDIDOS (${atendidos.length})</h3>
-  <div id="listaAtendidos" class="cards-list done-list"></div>
-</section>
-  `
-  : "";
+  const bloqueAtendidos = atendidos.length
+    ? `
+      <section class="section-group atendidos-section">
+        <h3 class="atendidos-title">✓ ATENDIDOS (${atendidos.length})</h3>
+        <div id="listaAtendidos" class="cards-list done-list"></div>
+      </section>
+    `
+    : "";
 
-contenedor.innerHTML = `
-  ${bloquePendientes}
-  ${bloqueAtendidos}
-`;
+  contenedor.innerHTML = `
+    ${bloquePendientes}
+    ${bloqueAtendidos}
+  `;
 
   const listaPendientes = document.getElementById("listaPendientes");
-const listaAtendidos = document.getElementById("listaAtendidos");
+  const listaAtendidos = document.getElementById("listaAtendidos");
 
-if (listaPendientes) {
-  pendientes.forEach((r) => {
-    listaPendientes.appendChild(crearTarjetaResidente(r));
-  });
-}
+  if (listaPendientes) {
+    pendientes.forEach((r) => {
+      listaPendientes.appendChild(crearTarjetaResidente(r));
+    });
+  }
 
-if (listaAtendidos) {
-  atendidos.forEach((r) => {
-    listaAtendidos.appendChild(crearTarjetaResidente(r));
-  });
-}
+  if (listaAtendidos) {
+    atendidos.forEach((r) => {
+      listaAtendidos.appendChild(crearTarjetaResidente(r));
+    });
+  }
 }
 // ============================================================
 // BLOQUE: Render lista editable admin
@@ -1010,14 +1030,14 @@ function renderHistorial() {
 
 
 // ============================================================
-// BLOQUE: Crear fila compacta de residente
+// BLOQUE: Crear card operativo de residente
 //
 // Qué hace:
-// - Crea una fila operativa compacta para móvil.
-// - Toda la fila permite marcar/desmarcar atención.
-// - Mantiene visible habitación, nombre, alertas y hora.
-// - El botón Incidencia queda separado para no activar el check.
-// - Sustituye las cards grandes por filas táctiles más eficientes.
+// - En Pendientes muestra card amplio y legible.
+// - En Pendientes muestra riesgo, pañal, encamado y observación base.
+// - En Atendidos no repite riesgo ni pañal.
+// - En Atendidos solo muestra la nota registrada por la auxiliar.
+// - La nota se muestra como ícono de lápiz.
 // ============================================================
 
 function crearTarjetaResidente(r) {
@@ -1026,61 +1046,69 @@ function crearTarjetaResidente(r) {
   const atendido = !!registro;
 
   fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${
-    atendido ? "is-done" : ""
+    atendido ? "is-done" : "is-pending"
   }`;
 
   const nombre = r.residente_nombre || "Sin nombre";
   const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
   const habitacion = r.habitacion || "-";
 
-  const detalles = [];
+  const chips = [];
 
-  if (r.riesgo) {
-    detalles.push("⚠️ Riesgo");
+  if (!atendido) {
+    if (r.riesgo) {
+      chips.push(`<span class="resident-chip risk">⚠️ Riesgo</span>`);
+    }
+
+    if (r.encamado) {
+      chips.push(`<span class="resident-chip">🛏️ Encamado</span>`);
+    }
+
+    if (r.panal && r.panal !== "-") {
+      chips.push(
+        `<span class="resident-chip">🩺 Pañal ${escaparTexto(r.panal)}</span>`
+      );
+    }
   }
 
-  if (r.encamado) {
-    detalles.push("🛏️ Encamado");
-  }
+  const chipsHtml = chips.length
+    ? `<div class="resident-row-detail">${chips.join("")}</div>`
+    : "";
 
-  if (r.panal && r.panal !== "-") {
-    detalles.push(`Pañal ${r.panal}`);
-  }
+  const notaVisible = atendido
+    ? registro?.incidencia || ""
+    : r.observacion || "";
 
-  if (r.observacion) {
-    detalles.push(r.observacion);
-  }
-
-  if (registro?.incidencia) {
-    detalles.push(`⚠️ ${registro.incidencia}`);
-  }
-
-  const detalleHtml = detalles.length
-    ? `<div class="resident-row-detail">${escaparTexto(detalles.join(" · "))}</div>`
+  const notaHtml = notaVisible
+    ? `<div class="resident-row-note">⚠️ <strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
     : "";
 
   const estadoHtml = atendido
-  ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
-  : "";
+    ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
+    : "";
 
   fila.innerHTML = `
-    <div class="resident-row-check">
-      ${atendido ? "✓" : ""}
-    </div>
-
     <div class="resident-row-main">
       <div class="resident-row-title">
-        <strong>${escaparTexto(habitacion)} · ${escaparTexto(nombre + apellidos)}</strong>
+        <strong>${escaparTexto(nombre + apellidos)}</strong>
+        <span>· Hab ${escaparTexto(habitacion)}</span>
       </div>
 
-      ${detalleHtml}
+      ${chipsHtml}
+      ${notaHtml}
     </div>
 
     <div class="resident-row-side">
       ${estadoHtml}
 
-      <button type="button" class="btn-incidencia" onclick="addIncidencia(${r.id_residente})">
-        Nota
+      <button 
+        type="button" 
+        class="btn-nota-icon" 
+        onclick="addIncidencia(${r.id_residente})"
+        aria-label="Agregar nota"
+        title="Agregar nota"
+      >
+        📝
       </button>
     </div>
   `;
