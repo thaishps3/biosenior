@@ -238,7 +238,17 @@ button {
   margin-bottom: 12px;
 }
 
-.btn-volver {
+/* ============================================================
+   BLOQUE: Botones de navegación superior
+
+   Qué hace:
+   - Da el mismo estilo a “Menú principal” y “Salir”.
+   - Refuerza que ambos son acciones de navegación.
+   - Mantiene una apariencia ligera sobre el banner principal.
+   ============================================================ */
+
+.btn-volver,
+.btn-logout {
   min-height: 32px;
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -249,10 +259,13 @@ button {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.btn-volver:hover {
-  background: rgba(255, 255, 255, 0.22);
+.btn-volver:hover,
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.55);
 }
 
 .planning-header-title {
@@ -310,25 +323,6 @@ button {
   color: #0a5a68;
 }
 
-.btn-logout {
-  min-height: 32px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.btn-logout:hover {
-  background: var(--primary-dk);
-  color: #ffffff;
-  border-color: var(--primary-dk);
-}
 
 
 /* ============================================================

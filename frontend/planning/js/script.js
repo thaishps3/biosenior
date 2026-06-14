@@ -839,31 +839,44 @@ function renderChecklist() {
     registroDelResidente(r.id_residente)
   );
 
-  contenedor.innerHTML = `
+  const bloquePendientes = pendientes.length
+  ? `
     <section class="section-group">
-      <h3>Pendientes — ${escaparTexto(titulo)}</h3>
+      <h3>Pendientes</h3>
       <div id="listaPendientes" class="cards-list"></div>
     </section>
+  `
+  : "";
 
+const bloqueAtendidos = atendidos.length
+  ? `
     <section class="section-group">
       <h3>Atendidos</h3>
       <div id="listaAtendidos" class="cards-list done-list"></div>
     </section>
-  `;
+  `
+  : "";
+
+contenedor.innerHTML = `
+  ${bloquePendientes}
+  ${bloqueAtendidos}
+`;
 
   const listaPendientes = document.getElementById("listaPendientes");
-  const listaAtendidos = document.getElementById("listaAtendidos");
+const listaAtendidos = document.getElementById("listaAtendidos");
 
+if (listaPendientes) {
   pendientes.forEach((r) => {
     listaPendientes.appendChild(crearTarjetaResidente(r));
   });
+}
 
+if (listaAtendidos) {
   atendidos.forEach((r) => {
     listaAtendidos.appendChild(crearTarjetaResidente(r));
   });
 }
-
-
+}
 // ============================================================
 // BLOQUE: Render lista editable admin
 //
