@@ -761,13 +761,20 @@ textarea:focus {
   text-overflow: ellipsis;
 }
 
+/* ============================================================
+   BLOQUE: Zona lateral de fila residente
+
+   Qué hace:
+   - Muestra hora si está atendido.
+   - Muestra botón Nota.
+   - Elimina etiqueta Pendiente para ahorrar espacio.
+   ============================================================ */
+
 .resident-row-side {
-  width: 78px;
-  min-width: 78px;
+  min-width: 48px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  justify-content: center;
   gap: 4px;
 }
 
@@ -776,15 +783,6 @@ textarea:focus {
   font-size: 0.74rem;
   font-weight: 900;
   line-height: 1;
-}
-
-.resident-row-action {
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-weight: 900;
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .btn-incidencia,
@@ -1191,4 +1189,42 @@ td {
   .tab-btn {
     font-size: 1rem;
   }
+}
+
+/* ============================================================
+   BLOQUE: Pendientes completo y Atendidos con scroll
+
+   Qué hace:
+   - Mantiene visibles todos los pendientes.
+   - Limita visualmente Atendidos después de 5 residentes.
+   - Evita que el bloque Atendidos alargue demasiado la pantalla móvil.
+   ============================================================ */
+
+.pendientes-section .cards-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.atendidos-section .done-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* ============================================================
+   BLOQUE: Historial con scroll horizontal y vertical
+   ============================================================ */
+
+#historialBox {
+  max-height: 360px;
+  overflow: auto;
+}
+
+#matrixTable {
+  min-width: 560px;
+}
+
+#matrixTable th,
+#matrixTable td {
+  white-space: nowrap;
 }

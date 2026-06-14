@@ -841,19 +841,19 @@ function renderChecklist() {
 
   const bloquePendientes = pendientes.length
   ? `
-    <section class="section-group">
-      <h3>Pendientes</h3>
-      <div id="listaPendientes" class="cards-list"></div>
-    </section>
+    <section class="section-group pendientes-section">
+  <h3>Pendientes</h3>
+  <div id="listaPendientes" class="cards-list"></div>
+</section>
   `
   : "";
 
 const bloqueAtendidos = atendidos.length
   ? `
-    <section class="section-group">
-      <h3>Atendidos</h3>
-      <div id="listaAtendidos" class="cards-list done-list"></div>
-    </section>
+    <section class="section-group atendidos-section">
+  <h3>Atendidos</h3>
+  <div id="listaAtendidos" class="cards-list done-list"></div>
+</section>
   `
   : "";
 
@@ -1036,8 +1036,8 @@ function crearTarjetaResidente(r) {
     : "";
 
   const estadoHtml = atendido
-    ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
-    : `<span class="resident-row-action">Pendiente</span>`;
+  ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
+  : "";
 
   fila.innerHTML = `
     <div class="resident-row-check">
@@ -1056,7 +1056,7 @@ function crearTarjetaResidente(r) {
       ${estadoHtml}
 
       <button type="button" class="btn-incidencia" onclick="addIncidencia(${r.id_residente})">
-        Incidencia
+        Nota
       </button>
     </div>
   `;
@@ -1077,6 +1077,7 @@ function crearTarjetaResidente(r) {
 // - Genera reporte imprimible del historial actual.
 // - Filtra por fecha, turno y plan/todos los planes.
 // - Usa impresión nativa del navegador.
+// - Evita columnas redundantes para ahorrar tinta y espacio.
 // ============================================================
 
 function prepararImpresion() {
@@ -1094,16 +1095,15 @@ function prepararImpresion() {
     return;
   }
 
+  const tituloPlan = viewAllMode ? "TODOS LOS PLANES" : `PLAN ${currentPlan}`;
+
   const filas = registrosHoy
     .map(
       (r) => `
         <tr>
           <td>${escaparTexto(r.hora || "")}</td>
-          <td>${escaparTexto(r.plan_letra || "")}</td>
           <td>${escaparTexto(r.habitacion || "")}</td>
           <td>${escaparTexto(r.residente_nombre || "")}</td>
-          <td>${escaparTexto(r.accion || "")}</td>
-          <td>${escaparTexto(r.auxiliar_nombre || s?.nombre || "")}</td>
           <td>${escaparTexto(r.incidencia || "")}</td>
         </tr>
       `
@@ -1118,7 +1118,7 @@ function prepararImpresion() {
   }
 
   printArea.innerHTML = `
-    <h2>REPORTE DE PLANNING</h2>
+    <h2>REPORTE PLANNING ${escaparTexto(tituloPlan)}</h2>
 
     <p><strong>Fecha:</strong> ${dateFull.toUpperCase()}</p>
     <p><strong>Turno:</strong> ${currentTurno}</p>
@@ -1129,12 +1129,9 @@ function prepararImpresion() {
       <thead>
         <tr>
           <th>Hora</th>
-          <th>Plan</th>
           <th>Hab.</th>
           <th>Residente</th>
-          <th>Acción</th>
-          <th>Auxiliar</th>
-          <th>Incidencia</th>
+          <th>Nota</th>
         </tr>
       </thead>
       <tbody>
@@ -1145,7 +1142,6 @@ function prepararImpresion() {
 
   window.print();
 }
-
 
 // ============================================================
 // BLOQUE: Inicio del módulo Planning
