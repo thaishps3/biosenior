@@ -220,6 +220,62 @@ table {
   padding: 0;
 }
 
+/* ============================================================
+   BLOQUE: Sesión compacta en cabecera
+
+   Qué hace:
+   - Muestra el rol o nombre del usuario de forma compacta.
+   - Evita textos redundantes como "Admin BioSenior - Admin".
+   - Da estilo uniforme al botón Salir.
+   - Prioriza diseño mobile first.
+   ============================================================ */
+
+#planSesionInfo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.session-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.session-badge.is-admin {
+  background: #fef3e2;
+  color: #7a4a00;
+}
+
+.session-badge.is-aux {
+  background: #e6f4f6;
+  color: #0a5a68;
+}
+
+.btn-logout {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
 /* ── TABS DE PLAN ─────────────────────────────────────────── */
 
 /* ============================================================

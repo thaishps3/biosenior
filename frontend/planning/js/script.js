@@ -190,9 +190,9 @@ function prepararInterfazPlanning() {
   const s = sesion();
 
   const headerAuxiliar = document.getElementById("headerAuxiliar");
-  if (headerAuxiliar) {
-    headerAuxiliar.innerText = s?.nombre || "Sin usuario";
-  }
+if (headerAuxiliar) {
+  headerAuxiliar.innerText = esAdmin() ? "Administrador" : s?.nombre || "Auxiliar";
+}
 
   crearSelectorTurnoSiNoExiste();
   prepararFormularioAsignacion();
@@ -210,15 +210,14 @@ function aplicarPermisosPorRol() {
         : "background:#e6f4f6;color:#0a5a68";
 
     info.innerHTML = `
-      <span style="${rolColor};padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;">
-        ${escaparTexto(s.nombre)} · ${s.rol === "admin" ? "Admin" : "Auxiliar"}
-      </span>
-      <button type="button" onclick="auth.cerrarSesion('index.html')" style="margin-left:8px;">
-        Salir
-      </button>
-    `;
-  }
+  <span class="session-badge ${s.rol === "admin" ? "is-admin" : "is-aux"}">
+    ${s.rol === "admin" ? "Administrador" : escaparTexto(s.nombre || "Auxiliar")}
+  </span>
 
+  <button type="button" class="btn-logout" onclick="auth.cerrarSesion('index.html')">
+    Salir
+  </button>
+`;
   const adminBlock = document.querySelector(".collapsible-box");
 
   if (!esAdmin()) {
