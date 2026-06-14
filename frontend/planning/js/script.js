@@ -174,25 +174,29 @@ async function cargarDatos() {
 // BLOQUE: Preparación inicial de interfaz
 //
 // Qué hace:
-// - Muestra fecha.
-// - Muestra usuario de sesión.
-// - Crea selector de turno si no existe.
+// - Muestra fecha compacta.
+// - Muestra usuario o rol de sesión.
+// - Crea selector de turno.
 // - Prepara formulario admin.
 // - Aplica permisos según rol.
 // ============================================================
 
 function prepararInterfazPlanning() {
   const displayDate = document.getElementById("displayDate");
+
   if (displayDate) {
-   displayDate.innerText = dateFull.charAt(0).toUpperCase() + dateFull.slice(1);
+    displayDate.innerText = dateFull.charAt(0).toUpperCase() + dateFull.slice(1);
   }
 
   const s = sesion();
 
   const headerAuxiliar = document.getElementById("headerAuxiliar");
-if (headerAuxiliar) {
-  headerAuxiliar.innerText = esAdmin() ? "Administrador" : s?.nombre || "Auxiliar";
-}
+
+  if (headerAuxiliar) {
+    headerAuxiliar.innerText = esAdmin()
+      ? "Administrador"
+      : s?.nombre || "Auxiliar";
+  }
 
   crearSelectorTurnoSiNoExiste();
   prepararFormularioAsignacion();
@@ -204,20 +208,17 @@ function aplicarPermisosPorRol() {
   const info = document.getElementById("planSesionInfo");
 
   if (info && s) {
-    const rolColor =
-      s.rol === "admin"
-        ? "background:#fef3e2;color:#7a4a00"
-        : "background:#e6f4f6;color:#0a5a68";
-
     info.innerHTML = `
-  <span class="session-badge ${s.rol === "admin" ? "is-admin" : "is-aux"}">
-    ${s.rol === "admin" ? "Administrador" : escaparTexto(s.nombre || "Auxiliar")}
-  </span>
+      <span class="session-badge ${s.rol === "admin" ? "is-admin" : "is-aux"}">
+        ${s.rol === "admin" ? "Administrador" : escaparTexto(s.nombre || "Auxiliar")}
+      </span>
 
-  <button type="button" class="btn-logout" onclick="auth.cerrarSesion('index.html')">
-    Salir
-  </button>
-`;
+      <button type="button" class="btn-logout" onclick="auth.cerrarSesion('index.html')">
+        Salir
+      </button>
+    `;
+  }
+
   const adminBlock = document.querySelector(".collapsible-box");
 
   if (!esAdmin()) {
@@ -227,6 +228,7 @@ function aplicarPermisosPorRol() {
   }
 
   const btnCambiar = document.querySelector(".btn-change-user");
+
   if (btnCambiar) {
     btnCambiar.style.display = "none";
   }
