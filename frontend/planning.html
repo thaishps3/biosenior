@@ -44,6 +44,7 @@
             <div class="planning-header-title">
                 <h1>Planning</h1>
                 <div id="planSesionInfo"></div>
+                <div id="planningPendingAlarm" class="planning-pending-alarm"></div>
             </div>
         </header>
 
@@ -108,33 +109,58 @@
         <div id="checklist" class="no-print"></div>
 
         <!-- ============================================================
-             BLOQUE: Historial del día
+             BLOQUE: Mi historial auxiliar
 
              Qué hace:
-             - Muestra registros del día según turno y plan.
-             - Permite alternar entre plan actual y todos los planes.
+             - Visible solo para auxiliares.
+             - Muestra únicamente los planes realizados por la auxiliar.
+             - Agrupa por fecha, turno y plan desde planning_registros.
+             - No muestra residentes, habitaciones ni incidencias.
              ============================================================ -->
 
-        <div class="history-box no-print">
-            <div class="history-header" onclick="toggleBox('historialBox')">
-                <span>📋 HISTORIAL DEL DÍA</span>
-                <span id="historialBox-arrow">▼</span>
+        <div class="mi-history-box no-print" id="miHistorialBoxWrapper">
+            <div class="mi-history-header" onclick="toggleBox('miHistorialBox')">
+                <span>📋 MI HISTORIAL</span>
+                <span id="miHistorialBox-arrow">▼</span>
             </div>
 
-            <div class="collapsible-content" id="historialBox">
-                <div class="history-actions">
-                    <button id="btnToggleMatrix" class="btn-history-toggle" type="button" onclick="toggleMatrixView()">
-                        Ver Todos los Planes
+            <div class="collapsible-content" id="miHistorialBox">
+                <div class="mi-history-actions">
+                    <label for="miHistorialFecha">Fecha</label>
+                    <input id="miHistorialFecha" type="date" onchange="renderMiHistorialAuxiliar()" />
+
+                    <label for="miHistorialTurno">Turno</label>
+                    <select id="miHistorialTurno" onchange="renderMiHistorialAuxiliar()">
+                        <option value="TODOS">Todos</option>
+                        <option value="Mañana">Mañana</option>
+                        <option value="Tarde">Tarde</option>
+                        <option value="Noche">Noche</option>
+                    </select>
+
+                    <label for="miHistorialPlan">Plan</label>
+                    <select id="miHistorialPlan" onchange="renderMiHistorialAuxiliar()">
+                        <option value="TODOS">Todos</option>
+                        <option value="A">Plan A</option>
+                        <option value="B">Plan B</option>
+                        <option value="C">Plan C</option>
+                        <option value="D">Plan D</option>
+                        <option value="ALT">Alterno</option>
+                    </select>
+                </div>
+
+                <div class="mi-history-print-action">
+                    <button class="btn-mi-report" type="button" onclick="prepararImpresionMiHistorial()">
+                        🖨️ IMPRIMIR MI HISTORIAL
                     </button>
                 </div>
 
-                <div class="history-table-wrap">
-                    <table id="matrixTable">
+                <div class="mi-history-table-wrap">
+                    <table id="miHistorialTable">
                         <thead>
                             <tr>
-                                <th>Hora</th>
-                                <th>Hab / Plan</th>
-                                <th>Residente</th>
+                                <th>Fecha</th>
+                                <th>Turno</th>
+                                <th>Plan</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -142,7 +168,55 @@
                 </div>
             </div>
         </div>
+<!-- ============================================================
+     BLOQUE: Historial administrativo
 
+     Qué hace:
+     - Muestra registros por fecha, turno y plan.
+     - Permite al administrador revisar notas/incidencias.
+     - La auxiliar no necesita ver este bloque.
+     ============================================================ -->
+
+<div class="history-box no-print">
+    <div class="history-header" onclick="toggleBox('historialBox')">
+        <span>📋 HISTORIAL</span>
+        <span id="historialBox-arrow">▼</span>
+    </div>
+
+    <div class="collapsible-content" id="historialBox">
+        <div class="history-actions">
+            <label for="historialFecha">Fecha</label>
+            <input id="historialFecha" type="date" onchange="renderHistorial()" />
+
+            <label for="historialPlan">Plan</label>
+            <select id="historialPlan" onchange="renderHistorial()">
+                <option value="TODOS">Todos</option>
+                <option value="A">Plan A</option>
+                <option value="B">Plan B</option>
+                <option value="C">Plan C</option>
+                <option value="D">Plan D</option>
+                <option value="ALT">Alterno</option>
+            </select>
+        </div>
+
+        <div class="history-table-wrap">
+            <table id="matrixTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Plan</th>
+                        <th>Hab.</th>
+                        <th>Residente</th>
+                        <th>Auxiliar</th>
+                        <th>Incidencia</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
         <!-- ============================================================
              BLOQUE: Reporte imprimible
 
@@ -153,7 +227,7 @@
 
         <div class="report-section no-print">
             <button class="btn-report" type="button" onclick="prepararImpresion()">
-                🖨️ GENERAR REPORTE PARA IMPRIMIR
+                🖨️ GENERAR REPORTE
             </button>
         </div>
 

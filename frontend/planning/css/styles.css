@@ -1013,6 +1013,110 @@ td {
 
 
 /* ============================================================
+   BLOQUE: Mi historial auxiliar
+
+   Qué hace:
+   - Da estilo al historial propio de auxiliares.
+   - Mantiene filtros Fecha, Turno y Plan fuera del scroll.
+   - Muestra una tabla simple: Fecha, Turno y Plan.
+   - No comparte estilos críticos con el historial admin.
+   ============================================================ */
+
+.mi-history-box {
+  width: 100%;
+  margin-top: 14px;
+  background: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.mi-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: var(--primary-dk);
+  color: #ffffff;
+  font-size: 0.9em;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mi-history-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.mi-history-actions label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.mi-history-actions input,
+.mi-history-actions select {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.84rem;
+}
+
+.mi-history-print-action {
+  padding: 10px 12px 4px;
+}
+
+.btn-mi-report {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mi-history-table-wrap {
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin: 8px 12px 12px;
+}
+
+#miHistorialTable {
+  min-width: 100%;
+}
+
+#miHistorialTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  background: #ffffff;
+  border-bottom: 2px solid var(--border);
+}
+
+#miHistorialTable th,
+#miHistorialTable td {
+  white-space: nowrap;
+}
+
+
+@media (min-width: 700px) {
+  .mi-history-actions {
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: end;
+  }
+}
+
+/* ============================================================
    BLOQUE: Reporte e impresión desde pantalla
 
    Qué hace:
@@ -1344,7 +1448,7 @@ td {
   margin-top: 3px;
   font-size: 0.72rem;
   line-height: 1.2;
-  color: var(--text);
+  color: var(--muted);
   white-space: normal;
 }
 
@@ -1452,7 +1556,7 @@ td {
   margin-top: 8px;
   font-size: 0.92rem;
   line-height: 1.3;
-  color: var(--danger);
+  color: var(--muted);
   white-space: normal;
 }
 
@@ -1533,4 +1637,630 @@ td {
 
 .pendientes-section .resident-row.is-pending.is-risk .resident-row-title strong {
   color: #7f1d1d;
+}
+
+/* ============================================================
+   BLOQUE: Habitación debajo del nombre
+
+   Qué hace:
+   - Muestra la habitación en una segunda línea.
+   - Mejora la lectura en móvil con nombres largos.
+   - Evita que nombre y habitación compitan en la misma línea.
+   ============================================================ */
+
+.pendientes-section .resident-row-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pendientes-section .resident-row-title span {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* ============================================================
+   BLOQUE: Filtros del historial administrativo
+
+   Qué hace:
+   - Ordena fecha y plan en móvil.
+   - Mantiene la tabla con scroll horizontal.
+   ============================================================ */
+
+.history-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: end;
+}
+
+.history-actions label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.history-actions input,
+.history-actions select {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.history-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
+#matrixTable {
+  min-width: 720px;
+}
+
+#matrixTable th,
+#matrixTable td {
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BLOQUE: Gestión admin separada
+
+   Qué hace:
+   - Separa visualmente el formulario de alta y la lista del plan.
+   - Reduce sensación de bloque único abrumador.
+   - Resalta residentes de riesgo dentro de la gestión.
+   ============================================================ */
+
+.admin-form-panel,
+.admin-list-panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-section-title {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.admin-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-list-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.admin-list-header span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.admin-empty-text {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.edit-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edit-row small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.edit-row.is-risk {
+  background: #fff5f7;
+  border-left: 4px solid #e2556f;
+  padding-left: 8px;
+}
+
+.admin-risk-tag {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: var(--danger);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+/* ============================================================
+   BLOQUE: Tabla admin de residentes asignados
+
+   Qué hace:
+   - Muestra los residentes asignados en filas y columnas.
+   - Facilita lectura rápida por habitación, nombre, riesgo y pañal.
+   - Mantiene acciones de editar/eliminar al final.
+   ============================================================ */
+
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-residentes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.admin-residentes-table th {
+  padding: 7px 6px;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 900;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.admin-residentes-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-residentes-table td strong {
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.admin-residentes-table tr.is-risk {
+  background: #fff5f7;
+}
+
+.admin-residentes-table tr.is-risk td:first-child {
+  border-left: 4px solid #e2556f;
+}
+
+.admin-table-actions {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.admin-table-actions button {
+  min-width: 28px;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.admin-empty-text {
+  padding: 10px 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   BLOQUE: Uniformidad tipográfica en gestión admin
+
+   Qué hace:
+   - Unifica fuente, tamaño y peso visual dentro del bloque admin.
+   - Evita que la lista de asignados parezca de otro diseño.
+   - Mantiene el texto en gris, igual que el formulario.
+   ============================================================ */
+
+.admin-form-panel,
+.admin-list-panel {
+  font-family: inherit;
+  color: var(--muted);
+}
+
+.admin-form-panel label,
+.admin-list-panel,
+.admin-list-panel span,
+.admin-list-panel small,
+.admin-list-panel strong {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.admin-section-title,
+.admin-list-header h4 {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.admin-list-header span {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.edit-row strong {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.edit-row small {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.admin-risk-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ============================================================
+   BLOQUE: Vista principal admin como cards de solo lectura
+
+   Qué hace:
+   - Replica el estilo de residentes asignados dentro del bloque admin.
+   - No muestra botones de editar ni eliminar.
+   - Mantiene color gris, tamaño uniforme y card compacto.
+   ============================================================ */
+
+.admin-main-list-panel {
+  margin-top: 8px;
+}
+
+.admin-main-row {
+  cursor: default;
+}
+
+.admin-main-row:hover {
+  background: inherit;
+}
+
+.admin-main-row span {
+  width: 100%;
+}
+
+/* ============================================================
+   BLOQUE: Historial admin limpio
+
+   Qué hace:
+   - El historial inicia cerrado.
+   - Se abre solo cuando toggleBox agrega la clase open.
+   - Evita doble scroll vertical.
+   - Mantiene solo scroll horizontal si la tabla no cabe en móvil.
+   ============================================================ */
+
+.history-box .collapsible-content {
+  display: none;
+}
+
+.history-box .collapsible-content.open {
+  display: block;
+}
+
+.history-table-wrap {
+  max-height: none;
+  overflow-y: visible;
+  overflow-x: auto;
+}
+
+#matrixTable {
+  min-width: 720px;
+}
+
+#matrixTable th,
+#matrixTable td {
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BLOQUE: Historial en modo revisión
+
+   Qué hace:
+   - Ajusta el historial cuando se mueve debajo de los tabs.
+   - Evita que parezca un bloque fuera de lugar.
+   ============================================================ */
+
+.history-box.history-focus-mode {
+  margin-top: 10px;
+  margin-bottom: 14px;
+}
+
+/* ============================================================
+   BLOQUE: Historial con filtros fijos
+
+   Qué hace:
+   - Mantiene visibles los filtros de fecha y plan.
+   - Solo permite scroll dentro de la tabla de historial.
+   - Evita tener que volver arriba para cambiar filtros.
+   ============================================================ */
+
+.history-box.history-focus-mode .collapsible-content {
+  max-height: none;
+  overflow: visible;
+}
+
+.history-box .history-actions {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #ffffff;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-box .history-table-wrap {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   BLOQUE: Historial con un solo scroll vertical
+
+   Qué hace:
+   - Elimina el scroll vertical del bloque general del historial.
+   - Mantiene visible el filtro.
+   - Mantiene visible la cabecera de la tabla.
+   - Solo los registros hacen scroll.
+   ============================================================ */
+
+.history-box .collapsible-content,
+.history-box.history-focus-mode .collapsible-content {
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: visible !important;
+}
+
+.history-box .history-actions {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #ffffff;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-box .history-table-wrap {
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  margin-top: 8px;
+}
+
+#matrixTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  background: #ffffff;
+  border-bottom: 2px solid var(--border);
+}
+/* ============================================================
+   BLOQUE: Alineación correcta filtros Mi historial auxiliar
+
+   Qué hace:
+   - Corrige la alineación en PC.
+   - Coloca cada etiqueta encima de su campo.
+   - Mantiene el botón imprimir en una fila completa.
+   ============================================================ */
+
+.aux-history-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px 10px;
+  padding: 10px 12px;
+}
+
+.aux-history-actions label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.aux-history-actions input,
+.aux-history-actions select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+/* PC / tablet */
+@media (min-width: 700px) {
+  .aux-history-actions {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: end;
+  }
+
+  .aux-history-actions label:nth-of-type(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .aux-history-actions input {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .aux-history-actions label:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .aux-history-actions select:nth-of-type(1) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .aux-history-actions label:nth-of-type(3) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .aux-history-actions select:nth-of-type(2) {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}
+/* ============================================================
+   BLOQUE: Corrección filtros Mi historial auxiliar
+
+   Qué hace:
+   - Alinea correctamente Fecha, Turno y Plan.
+   - Usa la clase real del HTML: .mi-history-actions.
+   - Mantiene mobile first.
+   - En PC coloca cada etiqueta encima de su campo.
+   ============================================================ */
+
+.mi-history-actions {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.mi-history-actions > label,
+.mi-history-actions > input,
+.mi-history-actions > select {
+  width: 100% !important;
+}
+
+.mi-history-actions > label {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  color: var(--muted) !important;
+}
+
+.mi-history-actions > input,
+.mi-history-actions > select {
+  min-height: 40px !important;
+  padding: 8px 10px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+}
+
+/* PC / tablet */
+@media (min-width: 700px) {
+  .mi-history-actions {
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 6px !important;
+    align-items: end !important;
+  }
+
+  .mi-history-actions > :nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .mi-history-actions > :nth-child(2) {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .mi-history-actions > :nth-child(3) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .mi-history-actions > :nth-child(4) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+
+  .mi-history-actions > :nth-child(5) {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+
+  .mi-history-actions > :nth-child(6) {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+  }
+}
+
+/* ============================================================
+   BLOQUE: Alarma de residentes pendientes en cabecera
+
+   Qué hace:
+   - Muestra aviso visible desde las 09:45 si quedan pendientes.
+   - Aparece tanto para admin como para auxiliar.
+   - Se oculta automáticamente cuando no hay pendientes.
+   ============================================================ */
+
+.planning-pending-alarm {
+  display: none;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #fff3cd;
+  color: #7a4a00;
+  border: 1px solid #f0c36d;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.planning-pending-alarm.active {
+  display: block;
+}
+
+/* ============================================================
+   BLOQUE: Resaltado admin por alarma de pendientes
+
+   Qué hace:
+   - Pinta en amarillo los residentes pendientes del turno Tarde.
+   - Solo se aplica cuando la alarma de 21:45 está activa.
+   - Permite al admin identificar qué residentes siguen sin atender.
+   ============================================================ */
+
+.admin-main-row.is-alert-pending {
+  background: #fff3cd !important;
+  border-left: 6px solid #f0ad00 !important;
+}
+
+.admin-main-row.is-alert-pending strong {
+  color: #5f3b00 !important;
+}
+
+.admin-alert-tag {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f0ad00;
+  color: #3d2800;
+  font-size: 0.68rem;
+  font-weight: 900;
 }

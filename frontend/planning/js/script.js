@@ -91,6 +91,11 @@ function nombrePlanVisible(plan) {
   return plan.letra === "ALT" ? "Alterno" : `Plan ${plan.letra}`;
 }
 
+function nombrePlanVisiblePorLetra(letra) {
+  if (!letra) return "";
+  return letra === "ALT" ? "Alterno" : `Plan ${letra}`;
+}
+
 function etiquetaPlanActual() {
   const plan = getPlanActual();
   return nombrePlanVisible(plan) || `Plan ${currentPlan}`;
@@ -107,8 +112,8 @@ function getPlanActual() {
 // Qué hace:
 // - Devuelve solo residentes del plan seleccionado.
 // - También filtra por turno seleccionado.
-// - Esta es la regla nueva:
-//   Planning = turno + plan + residente.
+// - No renderiza nada.
+// - No debe llamar a render(), porque causaría bucle infinito.
 // ============================================================
 
 function residentesDelPlanActual() {
@@ -117,7 +122,115 @@ function residentesDelPlanActual() {
   );
 }
 
+// ============================================================
+// BLOQUE: Alarma de residentes pendientes por turno
+//
+// Qué hace:
+// - Activa alarma solo para el turno Tarde desde las 21:45.
+// - Auxiliar: muestra pendientes del plan actual.
+// - Admin: muestra pendientes agrupados por plan.
+// - Permite al admin identificar qué plan necesita seguimiento.
+// - No modifica datos ni crea registros.
+// ============================================================
 
+function actualizarAlarmaPendientes() {
+  const alarma = document.getElementById("planningPendingAlarm");
+  if (!alarma) return;
+
+  //const ahora = new Date();
+  //const horaActual = ahora.getHours();
+  //const minutoActual = ahora.getMinutes();
+
+  //const yaEsHoraAlarmaTarde =
+    //horaActual > 21 || (horaActual === 21 && minutoActual >= 45);
+    const yaEsHoraAlarmaTarde = esHoraAlarmaTardeActiva();
+
+  if (!yaEsHoraAlarmaTarde) {
+    alarma.innerHTML = "";
+    alarma.classList.remove("active");
+    return;
+  }
+
+  // ============================================================
+  // CASO ADMIN:
+  // Revisa todos los planes del turno Tarde, sin depender del plan
+  // seleccionado en pantalla.
+  // ============================================================
+
+  if (esAdmin()) {
+    const asignacionesTarde = planResidentes.filter(
+      (r) => r.turno === "Tarde"
+    );
+
+    const pendientesTarde = asignacionesTarde.filter(
+      (r) => !registroDelResidentePorDatos(r.id_residente, "Tarde")
+    );
+
+    if (!pendientesTarde.length) {
+      alarma.innerHTML = "";
+      alarma.classList.remove("active");
+      return;
+    }
+
+    const pendientesPorPlan = {};
+
+    pendientesTarde.forEach((r) => {
+      const plan = r.plan_letra || "SIN_PLAN";
+
+      if (!pendientesPorPlan[plan]) {
+        pendientesPorPlan[plan] = 0;
+      }
+
+      pendientesPorPlan[plan]++;
+    });
+
+    const ordenPlanes = ["A", "B", "C", "D", "ALT"];
+
+    const detallePlanes = ordenPlanes
+      .filter((plan) => pendientesPorPlan[plan])
+      .map((plan) => {
+        const nombreVisible = plan === "ALT" ? "Alterno" : `Plan ${plan}`;
+        const total = pendientesPorPlan[plan];
+
+        return `${nombreVisible}: ${total}`;
+      })
+      .join(" · ");
+
+    alarma.classList.add("active");
+
+    alarma.innerHTML = `
+      ⚠️ Turno Tarde pendiente — ${escaparTexto(detallePlanes)}
+    `;
+
+    return;
+  }
+
+  // ============================================================
+  // CASO AUXILIAR:
+  // Revisa solo el plan actual del turno Tarde.
+  // ============================================================
+
+  const esTurnoTarde = currentTurno === "Tarde";
+
+  const residentesPlan = residentesDelPlanActual();
+
+  const pendientes = residentesPlan.filter(
+    (r) => !registroDelResidente(r.id_residente)
+  );
+
+  if (!esTurnoTarde || pendientes.length === 0) {
+    alarma.innerHTML = "";
+    alarma.classList.remove("active");
+    return;
+  }
+
+  alarma.classList.add("active");
+
+  alarma.innerHTML = `
+    ⚠️ Quedan ${pendientes.length} residente${pendientes.length === 1 ? "" : "s"} 
+    por atender en ${escaparTexto(etiquetaPlanActual())} · Tarde
+  `;
+}
 // ============================================================
 // BLOQUE: Helpers de registros diarios
 //
@@ -142,6 +255,89 @@ function registroDelResidente(idResidente) {
   );
 }
 
+// ============================================================
+// BLOQUE: Buscar registro del residente en el plan/turno actual
+//
+// Qué hace:
+// - Comprueba si un residente ya fue atendido hoy.
+// - Usa el turno actual seleccionado.
+// - Se usa para separar pendientes y atendidos.
+// ============================================================
+
+function registroDelResidente(idResidente) {
+  return registros.find(
+    (r) =>
+      Number(r.id_residente) === Number(idResidente) &&
+      fechaRegistro(r) === fechaHoy &&
+      r.turno === currentTurno
+  );
+}
+
+
+// ============================================================
+// BLOQUE: Buscar registro por residente y turno concreto
+//
+// Qué hace:
+// - Comprueba si un residente ya fue atendido hoy en un turno específico.
+// - No depende del turno actual seleccionado.
+// - Se usa para la alarma general del administrador.
+// ============================================================
+
+function registroDelResidentePorDatos(idResidente, turno) {
+  return registros.find(
+    (r) =>
+      Number(r.id_residente) === Number(idResidente) &&
+      fechaRegistro(r) === fechaHoy &&
+      r.turno === turno
+  );
+}
+
+// ============================================================
+// BLOQUE: Comprobar si la alarma de tarde está activa
+//
+// Qué hace:
+// - Centraliza la regla horaria de la alarma.
+// - Evita repetir la condición de 21:45 en varias funciones.
+// - Se usa para la cabecera y para resaltar cards del admin.
+// ============================================================
+
+function esHoraAlarmaTardeActiva() {
+  const ahora = new Date();
+  const horaActual = ahora.getHours();
+  const minutoActual = ahora.getMinutes();
+
+  return horaActual > 21 || (horaActual === 21 && minutoActual >= 45);
+}
+
+
+// ============================================================
+// BLOQUE: Comprobar residente pendiente en turno Tarde
+//
+// Qué hace:
+// - Indica si un residente sigue pendiente en el turno Tarde.
+// - Se usa para marcar en amarillo los cards del admin.
+// ============================================================
+
+function residentePendienteAlarmaTarde(idResidente) {
+  return !registroDelResidentePorDatos(idResidente, "Tarde");
+}
+// ============================================================
+// BLOQUE: Buscar registro por residente y turno concreto
+//
+// Qué hace:
+// - Permite revisar registros sin depender del turno actual.
+// - Se usa para la alarma general del administrador.
+// - Mantiene la fecha actual como criterio obligatorio.
+// ============================================================
+
+function registroDelResidentePorDatos(idResidente, turno) {
+  return registros.find(
+    (r) =>
+      Number(r.id_residente) === Number(idResidente) &&
+      fechaRegistro(r) === fechaHoy &&
+      r.turno === turno
+  );
+}
 
 // ============================================================
 // BLOQUE: Carga de datos desde API
@@ -199,33 +395,10 @@ function prepararInterfazPlanning() {
   }
 
   crearSelectorTurnoSiNoExiste();
-  prepararFormularioAsignacion();
-  aplicarPermisosPorRol();
+prepararFormularioAsignacion();
+aplicarPermisosPorRol();
 
-    // ============================================================
-  // BLOQUE: Permisos sobre historial del día
-  //
-  // Qué hace:
-  // - Oculta el historial diario para auxiliares.
-  // - Mantiene el historial visible para administrador.
-  // - Reduce información innecesaria en la vista operativa móvil.
-  // ============================================================
-
-  const historialBox = document.getElementById("historialBox");
-
-  if (historialBox) {
-    const contenedorHistorial =
-      historialBox.closest(".section-group") ||
-      historialBox.closest(".history-section") ||
-      historialBox.closest(".history-box") ||
-      historialBox.parentElement;
-
-    if (contenedorHistorial) {
-      contenedorHistorial.style.display = esAdmin() ? "block" : "none";
-    }
-  }
 }
-
 // ============================================================
 // BLOQUE: Aplicar permisos y datos de sesión por rol
 //
@@ -249,17 +422,22 @@ function aplicarPermisosPorRol() {
   }
 
   const adminBlock = document.querySelector(".collapsible-box");
+  const historyBox = document.querySelector(".history-box");
+  const reportButton = document.querySelector(".btn-report");
+  const miHistorialBox = document.getElementById("miHistorialBoxWrapper");
 
   if (!esAdmin()) {
     if (adminBlock) adminBlock.style.display = "none";
+    if (historyBox) historyBox.style.display = "none";
+    if (reportButton) reportButton.style.display = "none";
+    if (miHistorialBox) miHistorialBox.style.display = "block";
   } else {
     if (adminBlock) adminBlock.style.display = "block";
-  }
+    if (historyBox) historyBox.style.display = "block";
+    if (miHistorialBox) miHistorialBox.style.display = "none";
 
-  const btnCambiar = document.querySelector(".btn-change-user");
-
-  if (btnCambiar) {
-    btnCambiar.style.display = "none";
+    // El reporte pertenece al Historial, por eso inicia oculto.
+    if (reportButton) reportButton.style.display = "none";
   }
 }
 
@@ -311,8 +489,9 @@ function crearSelectorTurnoSiNoExiste() {
 //
 // Qué hace:
 // - Crea los campos para asignar residente a plan + turno.
-// - El turno no se elige dentro del formulario porque se toma
-//   del selector global de turno.
+// - No usa campo Orden porque la prioridad operativa la define:
+//   1. Residente de riesgo.
+//   2. Criterio de la auxiliar durante el turno.
 // ============================================================
 
 function prepararFormularioAsignacion() {
@@ -320,44 +499,44 @@ function prepararFormularioAsignacion() {
   if (!formBox) return;
 
   formBox.innerHTML = `
-    <input type="hidden" id="editId" />
+    <section class="admin-form-panel">
+      <h4 class="admin-section-title">Añadir residente al plan</h4>
 
-    <label>Residente</label>
-    <select id="residenteSelect">
-      <option value="">Seleccionar residente...</option>
-    </select>
+      <input type="hidden" id="editId" />
 
-    <label>Orden</label>
-    <input id="orden" type="number" min="1" placeholder="Orden dentro del plan" />
+      <label>Residente</label>
+      <select id="residenteSelect">
+        <option value="">Seleccionar residente...</option>
+      </select>
 
-    <label>Pañal</label>
-    <select id="pañal">
-      <option value="-">Pañal — sin cambio programado</option>
-      <option value="S">Talla S</option>
-      <option value="M">Talla M</option>
-      <option value="L">Talla L</option>
-      <option value="XL">Talla XL</option>
-    </select>
+      <label>Pañal</label>
+      <select id="pañal">
+        <option value="-">Pañal — sin cambio programado</option>
+        <option value="S">Talla S</option>
+        <option value="M">Talla M</option>
+        <option value="L">Talla L</option>
+        <option value="XL">Talla XL</option>
+      </select>
 
-    <label>Observación</label>
-    <textarea id="obs" placeholder="Indicaciones para la auxiliar"></textarea>
+      <label>Observación</label>
+      <textarea id="obs" placeholder="Indicaciones para la auxiliar"></textarea>
 
-    <label class="checkline">
-      <input type="checkbox" id="riesgo" />
-      ⚠️ Residente de riesgo
-    </label>
+      <label class="checkline">
+        <input type="checkbox" id="riesgo" />
+        ⚠️ Residente de riesgo
+      </label>
 
-    <label class="checkline">
-      <input type="checkbox" id="encamado" />
-      🛏️ Residente encamado
-    </label>
+      <label class="checkline">
+        <input type="checkbox" id="encamado" />
+        🛏️ Residente encamado
+      </label>
 
-    <button type="button" onclick="guardarAsignacionPlan()">
-      ASIGNAR AL PLAN
-    </button>
+      <button type="button" onclick="guardarAsignacionPlan()">
+        ASIGNAR AL PLAN
+      </button>
+    </section>
   `;
 }
-
 
 // ============================================================
 // BLOQUE: Cargar select de residentes
@@ -454,7 +633,9 @@ function renderBotonesPlanes() {
 //
 // Qué hace:
 // - Abre/cierra secciones colapsables.
-// - Si el admin abre ajustes, refresca la lista editable.
+// - Si el admin abre "Asignar residentes al plan",
+//   oculta historial y reporte para dejar solo gestión del plan.
+// - Si el admin cierra el bloque, vuelve a mostrar supervisión.
 // ============================================================
 
 function toggleBox(id) {
@@ -471,13 +652,112 @@ function toggleBox(id) {
     arrow.innerText = estaAbierto ? "▲" : "▼";
   }
 
+    if (esAdmin() && id === "historialBox") {
+    gestionarModoHistorial(estaAbierto);
+  }
   if (esAdmin() && id === "adminBox") {
+    const historyBox = document.querySelector(".history-box");
+    const reportButton = document.querySelector(".btn-report");
+    const checklist = document.getElementById("checklist");
+
+    if (historyBox) {
+      historyBox.style.display = estaAbierto ? "none" : "block";
+    }
+
+    if (reportButton) {
+      reportButton.style.display = estaAbierto ? "none" : "block";
+    }
+
+    if (checklist) {
+      checklist.style.display = estaAbierto ? "none" : "block";
+    }
+
     renderChecklist();
     renderEditList();
   }
 }
 
+// ============================================================
+// BLOQUE: Modo revisión de Historial
+//
+// Qué hace:
+// - Cuando el admin abre Historial, lo mueve debajo de los tabs A/B/C/D/Alt.
+// - Oculta la vista principal del plan para revisar sin distracciones.
+// - Oculta el bloque de asignación de residentes.
+// - Al cerrar Historial, devuelve todo a su posición normal.
+// ============================================================
 
+let historialPlaceholder = null;
+
+function gestionarModoHistorial(estaAbierto) {
+  const historyBox = document.querySelector(".history-box");
+  const tabs = document.querySelector(".tabs");
+  const adminBlock = document.querySelector(".collapsible-box");
+  const checklist = document.getElementById("checklist");
+  const reportButton = document.querySelector(".btn-report");
+
+  if (!historyBox) return;
+
+  if (estaAbierto) {
+    if (reportButton) {
+  reportButton.style.display = "block";
+}
+    if (!historialPlaceholder) {
+      historialPlaceholder = document.createComment("posicion-original-historial");
+      historyBox.parentNode.insertBefore(historialPlaceholder, historyBox);
+    }
+
+    if (tabs) {
+      tabs.insertAdjacentElement("afterend", historyBox);
+    }
+
+    if (adminBlock) {
+      adminBlock.style.display = "none";
+    }
+
+    if (checklist) {
+      checklist.innerHTML = "";
+      checklist.style.display = "none";
+    }
+
+    historyBox.classList.add("history-focus-mode");
+
+    renderHistorial();
+
+    setTimeout(() => {
+      historyBox.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 80);
+
+    return;
+  }
+
+  if (historialPlaceholder && historialPlaceholder.parentNode) {
+    historialPlaceholder.parentNode.insertBefore(
+      historyBox,
+      historialPlaceholder.nextSibling
+    );
+
+    historialPlaceholder.remove();
+    historialPlaceholder = null;
+  }
+
+  historyBox.classList.remove("history-focus-mode");
+
+  if (adminBlock) {
+    adminBlock.style.display = esAdmin() ? "block" : "none";
+  }
+
+  if (checklist) {
+    checklist.style.display = "block";
+  }
+if (reportButton) {
+  reportButton.style.display = "none";
+}
+  renderChecklist();
+}
 // ============================================================
 // BLOQUE: Guardar asignación de residente a plan + turno
 //
@@ -508,7 +788,6 @@ async function guardarAsignacionPlan() {
     id_plan: plan.id_plan,
     id_residente: Number(idResidente),
     turno: currentTurno,
-    orden: document.getElementById("orden").value || null,
     panal: document.getElementById("pañal").value,
     observacion: document.getElementById("obs").value.trim(),
     riesgo: document.getElementById("riesgo").checked,
@@ -564,7 +843,6 @@ function startEdit(id) {
 
   document.getElementById("editId").value = asignacion.id_plan_residente;
   document.getElementById("residenteSelect").value = asignacion.id_residente;
-  document.getElementById("orden").value = asignacion.orden || "";
   document.getElementById("pañal").value = asignacion.panal || "-";
   document.getElementById("obs").value = asignacion.observacion || "";
   document.getElementById("riesgo").checked = !!asignacion.riesgo;
@@ -622,7 +900,7 @@ async function deleteUser(id) {
 // ============================================================
 
 function resetForm() {
-  const campos = ["editId", "residenteSelect", "orden", "obs"];
+  const campos = ["editId", "residenteSelect", "obs"];
 
   campos.forEach((id) => {
     const el = document.getElementById(id);
@@ -778,6 +1056,8 @@ function toggleMatrixView() {
 }
 
 
+
+
 // ============================================================
 // BLOQUE: Render general
 //
@@ -785,7 +1065,9 @@ function toggleMatrixView() {
 // - Refresca botones de planes.
 // - Refresca lista de residentes.
 // - Refresca lista editable admin.
-// - Refresca historial.
+// - Refresca historial admin si existe.
+// - Refresca Mi historial auxiliar si existe.
+// - Actualiza alarma de pendientes si existe.
 // ============================================================
 
 function render() {
@@ -793,17 +1075,15 @@ function render() {
   renderChecklist();
   renderEditList();
   renderHistorial();
+
+  if (typeof renderMiHistorialAuxiliar === "function") {
+    renderMiHistorialAuxiliar();
+  }
+
+  if (typeof actualizarAlarmaPendientes === "function") {
+    actualizarAlarmaPendientes();
+  }
 }
-
-
-// ============================================================
-// BLOQUE: Render de pendientes y atendidos
-//
-// Qué hace:
-// - Admin ve lista compacta informativa.
-// - Auxiliar ve cards operativas.
-// - Siempre filtra por plan actual y turno actual.
-// ============================================================
 
 // ============================================================
 // BLOQUE: Render de pendientes y atendidos
@@ -823,7 +1103,7 @@ function renderChecklist() {
   const residentesPlan = residentesDelPlanActual();
   const titulo = `${etiquetaPlanActual()} · ${currentTurno}`;
 
-  if (esAdmin()) {
+    if (esAdmin()) {
     const adminBox = document.getElementById("adminBox");
     const ajustesAbiertos = adminBox && adminBox.classList.contains("open");
 
@@ -835,44 +1115,72 @@ function renderChecklist() {
 
     contenedor.style.display = "block";
 
-    if (residentesPlan.length === 0) {
-      contenedor.innerHTML = `
-        <section class="admin-plan-summary">
-          <h3>Residentes asignados — ${escaparTexto(titulo)}</h3>
-          <p>No hay residentes asignados a este plan y turno.</p>
-        </section>
-      `;
-      return;
-    }
+    const residentesOrdenados = residentesPlan
+      .slice()
+      .sort((a, b) => {
+        if (a.riesgo === b.riesgo) {
+          return String(a.residente_nombre || "").localeCompare(
+            String(b.residente_nombre || "")
+          );
+        }
+
+        return a.riesgo ? -1 : 1;
+      });
 
     contenedor.innerHTML = `
       <section class="admin-plan-summary">
         <h3>Residentes asignados — ${escaparTexto(titulo)}</h3>
-        <ul>
-          ${residentesPlan
-            .map((r) => {
-              const nombre = r.residente_nombre || "Sin nombre";
-              const apellidos = r.residente_apellidos
-                ? ` ${r.residente_apellidos}`
-                : "";
-              const habitacion = r.habitacion
-                ? ` · Hab. ${r.habitacion}`
-                : "";
-              const riesgo = r.riesgo ? " · ⚠️ Riesgo" : "";
 
-              return `
-                <li>
-                  ${escaparTexto(nombre + apellidos + habitacion + riesgo)}
-                </li>
-              `;
-            })
-            .join("")}
-        </ul>
+        <div class="admin-list-panel admin-main-list-panel">
+          <div id="adminMainResidentRows"></div>
+        </div>
       </section>
     `;
+
+    const lista = document.getElementById("adminMainResidentRows");
+    if (!lista) return;
+
+    if (!residentesOrdenados.length) {
+      lista.innerHTML = `
+        <p class="admin-empty-text">
+          No hay residentes asignados a este plan y turno.
+        </p>
+      `;
+      return;
+    }
+
+    residentesOrdenados.forEach((r) => {
+  const nombre = r.residente_nombre || "Sin nombre";
+  const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
+
+  const riesgoTag = r.riesgo
+    ? `<span class="admin-risk-tag">Riesgo</span>`
+    : "";
+
+  const estaEnAlarma =
+    esAdmin() &&
+    currentTurno === "Tarde" &&
+    esHoraAlarmaTardeActiva() &&
+    residentePendienteAlarmaTarde(r.id_residente);
+
+  const alarmaTag = estaEnAlarma
+    ? `<span class="admin-alert-tag">Pendiente 21:45</span>`
+    : "";
+
+  lista.innerHTML += `
+    <div class="edit-row admin-main-row ${r.riesgo ? "is-risk" : ""} ${estaEnAlarma ? "is-alert-pending" : ""}">
+      <span>
+        <strong>${escaparTexto(nombre + apellidos)}</strong>
+        <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
+        ${riesgoTag}
+        ${alarmaTag}
+      </span>
+    </div>
+  `;
+});
+
     return;
   }
-
   contenedor.style.display = "block";
 
   const pendientes = residentesPlan
@@ -932,6 +1240,7 @@ function renderChecklist() {
 //
 // Qué hace:
 // - Muestra residentes del plan + turno actual.
+// - Separa claramente la gestión de la lista asignada.
 // - Permite editar o retirar residentes.
 // - Solo aparece para admin.
 // ============================================================
@@ -946,15 +1255,37 @@ function renderEditList() {
 
   if (!contenedor) return;
 
-  const residentesPlan = residentesDelPlanActual();
+  const residentesPlan = residentesDelPlanActual()
+    .slice()
+    .sort((a, b) => {
+      if (a.riesgo === b.riesgo) {
+        return String(a.residente_nombre || "").localeCompare(
+          String(b.residente_nombre || "")
+        );
+      }
+
+      return a.riesgo ? -1 : 1;
+    });
 
   contenedor.innerHTML = `
-    <h4>Residentes en ${escaparTexto(etiquetaPlanActual())} · ${escaparTexto(currentTurno)}</h4>
+    <section class="admin-list-panel">
+      <div class="admin-list-header">
+        <h4>Residentes asignados</h4>
+        <span>${escaparTexto(etiquetaPlanActual())} · ${escaparTexto(currentTurno)}</span>
+      </div>
+
+      <div id="adminResidentRows"></div>
+    </section>
   `;
 
+  const lista = document.getElementById("adminResidentRows");
+  if (!lista) return;
+
   if (!residentesPlan.length) {
-    contenedor.innerHTML += `
-      <p>Sin residentes en este plan y turno.</p>
+    lista.innerHTML = `
+      <p class="admin-empty-text">
+        Sin residentes en este plan y turno.
+      </p>
     `;
     return;
   }
@@ -962,13 +1293,13 @@ function renderEditList() {
   residentesPlan.forEach((r) => {
     const nombre = r.residente_nombre || "Sin nombre";
     const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
-    const riesgoTag = r.riesgo ? ` ⚠️` : "";
+    const riesgoTag = r.riesgo ? ` <span class="admin-risk-tag">Riesgo</span>` : "";
 
-    contenedor.innerHTML += `
-      <div class="edit-row">
+    lista.innerHTML += `
+      <div class="edit-row ${r.riesgo ? "is-risk" : ""}">
         <span>
-          ${escaparTexto(nombre + apellidos)}
-          · Hab ${escaparTexto(r.habitacion || "-")}
+          <strong>${escaparTexto(nombre + apellidos)}</strong>
+          <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
           ${riesgoTag}
         </span>
 
@@ -981,31 +1312,60 @@ function renderEditList() {
   });
 }
 
-
 // ============================================================
-// BLOQUE: Render historial del día
+// BLOQUE: Render historial administrativo
 //
 // Qué hace:
-// - Muestra registros de hoy.
-// - Filtra por turno actual.
-// - Si viewAllMode está apagado, también filtra por plan actual.
+// - Muestra registros filtrados por fecha, turno y plan.
+// - Permite al administrador revisar incidencias/notas.
+// - Muestra fecha, hora, plan, habitación, residente, auxiliar e incidencia.
+// - La auxiliar no necesita consultar este historial.
 // ============================================================
 
 function renderHistorial() {
   const tbody = document.querySelector("#matrixTable tbody");
   if (!tbody) return;
 
+  if (!esAdmin()) {
+    tbody.innerHTML = "";
+    return;
+  }
+
+  const inputFecha = document.getElementById("historialFecha");
+  const selectPlan = document.getElementById("historialPlan");
+
+  if (inputFecha && !inputFecha.value) {
+    inputFecha.value = fechaHoy;
+  }
+
+  const fechaFiltro = inputFecha?.value || fechaHoy;
+  const planFiltro = selectPlan?.value || "TODOS";
+
   const filtrados = registros
-    .filter((r) => fechaRegistro(r) === fechaHoy)
-    .filter((r) => (viewAllMode ? true : r.plan_letra === currentPlan))
+    .filter((r) => fechaRegistro(r) === fechaFiltro)
     .filter((r) => r.turno === currentTurno)
+    .filter((r) => {
+      if (planFiltro === "TODOS") return true;
+      return r.plan_letra === planFiltro;
+    })
     .slice()
-    .reverse();
+    .sort((a, b) => {
+      const planA = String(a.plan_letra || "");
+      const planB = String(b.plan_letra || "");
+
+      if (planA !== planB) {
+        return planA.localeCompare(planB);
+      }
+
+      return String(a.hora || "").localeCompare(String(b.hora || ""));
+    });
 
   if (!filtrados.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5">Sin registros hoy para ${escaparTexto(currentTurno)}.</td>
+        <td colspan="7">
+          Sin registros para la fecha, turno y plan seleccionados.
+        </td>
       </tr>
     `;
     return;
@@ -1013,27 +1373,193 @@ function renderHistorial() {
 
   tbody.innerHTML = filtrados
     .map((r) => {
-      const planCol = viewAllMode
-        ? `${escaparTexto(r.plan_letra)} — ${escaparTexto(r.habitacion || "-")}`
-        : escaparTexto(r.habitacion || "-");
-
-      const incTag = r.incidencia
-        ? `<br><strong>⚠️ ${escaparTexto(r.incidencia)}</strong>`
-        : "";
+      const nombre = r.residente_nombre || "";
+      const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
+      const incidencia = r.incidencia || "";
 
       return `
         <tr>
+          <td>${escaparTexto(fechaRegistro(r))}</td>
           <td>${escaparTexto(r.hora || "")}</td>
-          <td>${planCol}</td>
-          <td>${escaparTexto(r.residente_nombre || "")}${incTag}</td>
-          <td>${escaparTexto(r.accion || "")}</td>
+          <td>${escaparTexto(r.plan_letra || "")}</td>
+          <td>${escaparTexto(r.habitacion || "")}</td>
+          <td>${escaparTexto(nombre + apellidos)}</td>
           <td>${escaparTexto(r.auxiliar_nombre || "")}</td>
+          <td>${escaparTexto(incidencia)}</td>
         </tr>
       `;
     })
     .join("");
 }
 
+
+// ============================================================
+// BLOQUE: Mi historial auxiliar
+//
+// Qué hace:
+// - Usa planning_registros ya cargado desde PostgreSQL.
+// - Filtra por id_usuario de la sesión actual.
+// - Agrupa por id_usuario + fecha + turno + plan.
+// - Muestra solo Fecha, Turno y Plan.
+// - No muestra residentes, habitaciones, auxiliares ni incidencias.
+// ============================================================
+
+function obtenerMiHistorialAgrupado() {
+  const s = sesion();
+
+  if (!s || esAdmin()) return [];
+
+  const inputFecha = document.getElementById("miHistorialFecha");
+  const selectTurno = document.getElementById("miHistorialTurno");
+  const selectPlan = document.getElementById("miHistorialPlan");
+
+  const fechaFiltro = inputFecha?.value || "TODOS";
+  const turnoFiltro = selectTurno?.value || "TODOS";
+  const planFiltro = selectPlan?.value || "TODOS";
+
+  const mapa = new Map();
+
+  registros
+    .filter((r) => Number(r.id_usuario) === Number(s.id_usuario))
+    .filter((r) => {
+      if (fechaFiltro === "TODOS") return true;
+      return fechaRegistro(r) === fechaFiltro;
+    })
+    .filter((r) => {
+      if (turnoFiltro === "TODOS") return true;
+      return r.turno === turnoFiltro;
+    })
+    .filter((r) => {
+      if (planFiltro === "TODOS") return true;
+      return r.plan_letra === planFiltro;
+    })
+    .forEach((r) => {
+      const fecha = fechaRegistro(r);
+      const turno = r.turno || "";
+      const plan = r.plan_letra || "";
+      const clave = `${s.id_usuario}|${fecha}|${turno}|${plan}`;
+
+      if (!mapa.has(clave)) {
+        mapa.set(clave, { fecha, turno, plan });
+      }
+    });
+
+  const ordenTurnos = { "Mañana": 1, "Tarde": 2, "Noche": 3 };
+  const ordenPlanes = { A: 1, B: 2, C: 3, D: 4, ALT: 5 };
+
+  return Array.from(mapa.values()).sort((a, b) => {
+    if (a.fecha !== b.fecha) return String(b.fecha).localeCompare(String(a.fecha));
+
+    const turnoA = ordenTurnos[a.turno] || 99;
+    const turnoB = ordenTurnos[b.turno] || 99;
+
+    if (turnoA !== turnoB) return turnoA - turnoB;
+
+    return (ordenPlanes[a.plan] || 99) - (ordenPlanes[b.plan] || 99);
+  });
+}
+
+function renderMiHistorialAuxiliar() {
+  const tbody = document.querySelector("#miHistorialTable tbody");
+  if (!tbody) return;
+
+  if (esAdmin()) {
+    tbody.innerHTML = "";
+    return;
+  }
+
+  const historial = obtenerMiHistorialAgrupado();
+
+  if (!historial.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3">
+          No tienes planes registrados con los filtros seleccionados.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = historial
+    .map(
+      (item) => `
+        <tr>
+          <td>${escaparTexto(item.fecha)}</td>
+          <td>${escaparTexto(item.turno)}</td>
+          <td>${escaparTexto(nombrePlanVisiblePorLetra(item.plan))}</td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+function prepararImpresionMiHistorial() {
+  if (esAdmin()) {
+    alert("El historial propio solo está disponible para auxiliares.");
+    return;
+  }
+
+  const s = sesion();
+  const historial = obtenerMiHistorialAgrupado();
+
+  if (!historial.length) {
+    alert("No hay registros en tu historial para imprimir.");
+    return;
+  }
+
+  const inputFecha = document.getElementById("miHistorialFecha");
+  const selectTurno = document.getElementById("miHistorialTurno");
+  const selectPlan = document.getElementById("miHistorialPlan");
+
+  const fechaFiltro = inputFecha?.value || "Todas";
+  const turnoFiltro = selectTurno?.value || "TODOS";
+  const planFiltro = selectPlan?.value || "TODOS";
+
+  const filas = historial
+    .map(
+      (item) => `
+        <tr>
+          <td>${escaparTexto(item.fecha)}</td>
+          <td>${escaparTexto(item.turno)}</td>
+          <td>${escaparTexto(nombrePlanVisiblePorLetra(item.plan))}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  const printArea = document.getElementById("printArea");
+
+  if (!printArea) {
+    alert("No existe el área de impresión.");
+    return;
+  }
+
+  printArea.innerHTML = `
+    <div class="report-header">
+      <h2>MI HISTORIAL - PLANNING</h2>
+      <p><strong>Auxiliar:</strong> ${escaparTexto(s?.nombre || "Auxiliar")}</p>
+      <p><strong>Fecha:</strong> ${escaparTexto(fechaFiltro)}</p>
+      <p><strong>Turno:</strong> ${escaparTexto(turnoFiltro === "TODOS" ? "Todos" : turnoFiltro)}</p>
+      <p><strong>Plan:</strong> ${escaparTexto(planFiltro === "TODOS" ? "Todos" : nombrePlanVisiblePorLetra(planFiltro))}</p>
+    </div>
+
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Plan</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filas}
+      </tbody>
+    </table>
+  `;
+
+  window.print();
+}
 
 // ============================================================
 // BLOQUE: Crear card operativo de residente
@@ -1082,22 +1608,22 @@ function crearTarjetaResidente(r) {
     : "";
 
   const notaVisible = atendido
-    ? registro?.incidencia || ""
-    : r.observacion || "";
+  ? ""
+  : r.observacion || "";
 
   const notaHtml = notaVisible
-    ? `<div class="resident-row-note">⚠️ <strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
-    : "";
+  ? `<div class="resident-row-note"><strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
+  : "";
 
   const estadoHtml = atendido
     ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
     : "";
 
-  fila.innerHTML = `
+    fila.innerHTML = `
     <div class="resident-row-main">
       <div class="resident-row-title">
         <strong>${escaparTexto(nombre + apellidos)}</strong>
-        <span>· Hab ${escaparTexto(habitacion)}</span>
+        <span>Hab. ${escaparTexto(habitacion)}</span>
       </div>
 
       ${chipsHtml}
@@ -1129,43 +1655,76 @@ function crearTarjetaResidente(r) {
 
 
 // ============================================================
-// BLOQUE: Preparar impresión
+// BLOQUE: Preparar impresión desde Historial
 //
 // Qué hace:
-// - Genera reporte imprimible del historial actual.
-// - Filtra por fecha, turno y plan/todos los planes.
+// - Genera reporte imprimible usando los mismos filtros del historial.
+// - Respeta fecha seleccionada, turno actual y plan seleccionado.
+// - No depende de la lista principal de residentes asignados.
 // - Usa impresión nativa del navegador.
-// - Evita columnas redundantes para ahorrar tinta y espacio.
 // ============================================================
 
 function prepararImpresion() {
-  const s = sesion();
-
-  const registrosHoy = registros
-    .filter((r) => fechaRegistro(r) === fechaHoy)
-    .filter((r) => (viewAllMode ? true : r.plan_letra === currentPlan))
-    .filter((r) => r.turno === currentTurno)
-    .slice()
-    .sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
-
-  if (!registrosHoy.length) {
-    alert("No hay registros para imprimir.");
+  if (!esAdmin()) {
+    alert("Solo el administrador puede generar reportes.");
     return;
   }
 
-  const tituloPlan = viewAllMode ? "TODOS LOS PLANES" : `PLAN ${currentPlan}`;
+  const s = sesion();
 
-  const filas = registrosHoy
-    .map(
-      (r) => `
+  const inputFecha = document.getElementById("historialFecha");
+  const selectPlan = document.getElementById("historialPlan");
+
+  const fechaFiltro = inputFecha?.value || fechaHoy;
+  const planFiltro = selectPlan?.value || "TODOS";
+
+  const registrosFiltrados = registros
+    .filter((r) => fechaRegistro(r) === fechaFiltro)
+    .filter((r) => r.turno === currentTurno)
+    .filter((r) => {
+      if (planFiltro === "TODOS") return true;
+      return r.plan_letra === planFiltro;
+    })
+    .slice()
+    .sort((a, b) => {
+      const planA = String(a.plan_letra || "");
+      const planB = String(b.plan_letra || "");
+
+      if (planA !== planB) {
+        return planA.localeCompare(planB);
+      }
+
+      return String(a.hora || "").localeCompare(String(b.hora || ""));
+    });
+
+  if (!registrosFiltrados.length) {
+    alert("No hay registros en el historial para imprimir.");
+    return;
+  }
+
+  const tituloPlan =
+    planFiltro === "TODOS"
+      ? "TODOS LOS PLANES"
+      : planFiltro === "ALT"
+        ? "ALTERNO"
+        : `PLAN ${planFiltro}`;
+
+  const filas = registrosFiltrados
+    .map((r) => {
+      const nombre = r.residente_nombre || "";
+      const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
+
+      return `
         <tr>
           <td>${escaparTexto(r.hora || "")}</td>
+          <td>${escaparTexto(r.plan_letra || "")}</td>
           <td>${escaparTexto(r.habitacion || "")}</td>
-          <td>${escaparTexto(r.residente_nombre || "")}</td>
+          <td>${escaparTexto(nombre + apellidos)}</td>
+          <td>${escaparTexto(r.auxiliar_nombre || "")}</td>
           <td>${escaparTexto(r.incidencia || "")}</td>
         </tr>
-      `
-    )
+      `;
+    })
     .join("");
 
   const printArea = document.getElementById("printArea");
@@ -1176,20 +1735,21 @@ function prepararImpresion() {
   }
 
   printArea.innerHTML = `
-    <h2>REPORTE PLANNING ${escaparTexto(tituloPlan)}</h2>
+    <h2>REPORTE PLANNING - ${escaparTexto(tituloPlan)}</h2>
 
-    <p><strong>Fecha:</strong> ${dateFull.toUpperCase()}</p>
-    <p><strong>Turno:</strong> ${currentTurno}</p>
-    <p><strong>Acción:</strong> ${accionPorTurno(currentTurno)}</p>
-    <p><strong>Auxiliar:</strong> ${escaparTexto(s?.nombre || "No identificado")}</p>
+    <p><strong>Fecha:</strong> ${escaparTexto(fechaFiltro)}</p>
+    <p><strong>Turno:</strong> ${escaparTexto(currentTurno)}</p>
+    <p><strong>Generado por:</strong> ${escaparTexto(s?.nombre || "Administrador")}</p>
 
     <table>
       <thead>
         <tr>
           <th>Hora</th>
+          <th>Plan</th>
           <th>Hab.</th>
           <th>Residente</th>
-          <th>Nota</th>
+          <th>Auxiliar</th>
+          <th>Incidencia</th>
         </tr>
       </thead>
       <tbody>
@@ -1245,6 +1805,10 @@ async function iniciarPlanning() {
     renderBotonesPlanes();
     cargarSelectResidentes();
     render();
+if (typeof actualizarAlarmaPendientes === "function") {
+  setInterval(actualizarAlarmaPendientes, 60000);
+}
+
   } catch (error) {
     console.error(error);
     alert("No se pudo cargar Planning. Revisa backend, rutas API o consola.");
