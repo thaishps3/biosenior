@@ -142,8 +142,8 @@ function actualizarAlarmaPendientes() {
   //const minutoActual = ahora.getMinutes();
 
   //const yaEsHoraAlarmaTarde =
-    //horaActual > 21 || (horaActual === 21 && minutoActual >= 45);
-    const yaEsHoraAlarmaTarde = esHoraAlarmaTardeActiva();
+  //horaActual > 21 || (horaActual === 21 && minutoActual >= 45);
+  const yaEsHoraAlarmaTarde = esHoraAlarmaTardeActiva();
 
   if (!yaEsHoraAlarmaTarde) {
     alarma.innerHTML = "";
@@ -395,8 +395,8 @@ function prepararInterfazPlanning() {
   }
 
   crearSelectorTurnoSiNoExiste();
-prepararFormularioAsignacion();
-aplicarPermisosPorRol();
+  prepararFormularioAsignacion();
+  aplicarPermisosPorRol();
 
 }
 // ============================================================
@@ -652,7 +652,7 @@ function toggleBox(id) {
     arrow.innerText = estaAbierto ? "▲" : "▼";
   }
 
-    if (esAdmin() && id === "historialBox") {
+  if (esAdmin() && id === "historialBox") {
     gestionarModoHistorial(estaAbierto);
   }
   if (esAdmin() && id === "adminBox") {
@@ -700,8 +700,8 @@ function gestionarModoHistorial(estaAbierto) {
 
   if (estaAbierto) {
     if (reportButton) {
-  reportButton.style.display = "block";
-}
+      reportButton.style.display = "block";
+    }
     if (!historialPlaceholder) {
       historialPlaceholder = document.createComment("posicion-original-historial");
       historyBox.parentNode.insertBefore(historialPlaceholder, historyBox);
@@ -753,9 +753,9 @@ function gestionarModoHistorial(estaAbierto) {
   if (checklist) {
     checklist.style.display = "block";
   }
-if (reportButton) {
-  reportButton.style.display = "none";
-}
+  if (reportButton) {
+    reportButton.style.display = "none";
+  }
   renderChecklist();
 }
 // ============================================================
@@ -1010,19 +1010,19 @@ function addIncidencia(idResidente) {
 
   const guardarNota = registro?.id_registro
     ? api.editarPlanningRegistro(registro.id_registro, {
-        incidencia: notaFinal,
-        observacion: registro.observacion || null,
-        realizado: true
-      })
+      incidencia: notaFinal,
+      observacion: registro.observacion || null,
+      realizado: true
+    })
     : api.crearPlanningRegistro({
-        id_plan: plan.id_plan,
-        id_residente: idResidente,
-        id_usuario: s.id_usuario,
-        fecha: fechaHoy,
-        turno: currentTurno,
-        accion: accionPorTurno(currentTurno),
-        incidencia: notaFinal
-      });
+      id_plan: plan.id_plan,
+      id_residente: idResidente,
+      id_usuario: s.id_usuario,
+      fecha: fechaHoy,
+      turno: currentTurno,
+      accion: accionPorTurno(currentTurno),
+      incidencia: notaFinal
+    });
 
   guardarNota
     .then(() => cargarDatos())
@@ -1074,6 +1074,7 @@ function render() {
   renderBotonesPlanes();
   renderChecklist();
   renderEditList();
+  cargarFiltroAuxiliaresHistorial();
   renderHistorial();
 
   if (typeof renderMiHistorialAuxiliar === "function") {
@@ -1103,7 +1104,7 @@ function renderChecklist() {
   const residentesPlan = residentesDelPlanActual();
   const titulo = `${etiquetaPlanActual()} · ${currentTurno}`;
 
-    if (esAdmin()) {
+  if (esAdmin()) {
     const adminBox = document.getElementById("adminBox");
     const ajustesAbiertos = adminBox && adminBox.classList.contains("open");
 
@@ -1150,24 +1151,24 @@ function renderChecklist() {
     }
 
     residentesOrdenados.forEach((r) => {
-  const nombre = r.residente_nombre || "Sin nombre";
-  const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
+      const nombre = r.residente_nombre || "Sin nombre";
+      const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
 
-  const riesgoTag = r.riesgo
-    ? `<span class="admin-risk-tag">Riesgo</span>`
-    : "";
+      const riesgoTag = r.riesgo
+        ? `<span class="admin-risk-tag">Riesgo</span>`
+        : "";
 
-  const estaEnAlarma =
-    esAdmin() &&
-    currentTurno === "Tarde" &&
-    esHoraAlarmaTardeActiva() &&
-    residentePendienteAlarmaTarde(r.id_residente);
+      const estaEnAlarma =
+        esAdmin() &&
+        currentTurno === "Tarde" &&
+        esHoraAlarmaTardeActiva() &&
+        residentePendienteAlarmaTarde(r.id_residente);
 
-  const alarmaTag = estaEnAlarma
-    ? `<span class="admin-alert-tag">Pendiente 21:45</span>`
-    : "";
+      const alarmaTag = estaEnAlarma
+        ? `<span class="admin-alert-tag">Pendiente 21:45</span>`
+        : "";
 
-  lista.innerHTML += `
+      lista.innerHTML += `
     <div class="edit-row admin-main-row ${r.riesgo ? "is-risk" : ""} ${estaEnAlarma ? "is-alert-pending" : ""}">
       <span>
         <strong>${escaparTexto(nombre + apellidos)}</strong>
@@ -1177,21 +1178,21 @@ function renderChecklist() {
       </span>
     </div>
   `;
-});
+    });
 
     return;
   }
   contenedor.style.display = "block";
 
   const pendientes = residentesPlan
-  .filter((r) => !registroDelResidente(r.id_residente))
-  .sort((a, b) => {
-    if (a.riesgo === b.riesgo) {
-      return Number(a.orden || 999) - Number(b.orden || 999);
-    }
+    .filter((r) => !registroDelResidente(r.id_residente))
+    .sort((a, b) => {
+      if (a.riesgo === b.riesgo) {
+        return Number(a.orden || 999) - Number(b.orden || 999);
+      }
 
-    return a.riesgo ? -1 : 1;
-  });
+      return a.riesgo ? -1 : 1;
+    });
 
   const atendidos = residentesPlan.filter((r) =>
     registroDelResidente(r.id_residente)
@@ -1313,6 +1314,53 @@ function renderEditList() {
 }
 
 // ============================================================
+// BLOQUE: Cargar filtro de auxiliares en historial admin
+//
+// Qué hace:
+// - Lee los auxiliares desde los registros cargados.
+// - Evita duplicados por id_usuario.
+// - Llena el select del historial admin.
+// - No crea usuarios ni modifica datos.
+// ============================================================
+
+function cargarFiltroAuxiliaresHistorial() {
+  const select = document.getElementById("historialAuxiliar");
+
+  if (!select || !esAdmin()) return;
+
+  const valorActual = select.value || "TODOS";
+
+  const auxiliaresMap = new Map();
+
+  registros.forEach((r) => {
+    if (!r.id_usuario) return;
+
+    const nombre = r.auxiliar_nombre || `Usuario ${r.id_usuario}`;
+
+    auxiliaresMap.set(String(r.id_usuario), nombre);
+  });
+
+  const auxiliaresOrdenados = Array.from(auxiliaresMap.entries()).sort((a, b) =>
+    String(a[1]).localeCompare(String(b[1]))
+  );
+
+  select.innerHTML = `<option value="TODOS">Todas</option>`;
+
+  auxiliaresOrdenados.forEach(([idUsuario, nombre]) => {
+    select.innerHTML += `
+      <option value="${escaparTexto(idUsuario)}">
+        ${escaparTexto(nombre)}
+      </option>
+    `;
+  });
+
+  if ([...auxiliaresMap.keys()].includes(valorActual)) {
+    select.value = valorActual;
+  } else {
+    select.value = "TODOS";
+  }
+}
+// ============================================================
 // BLOQUE: Render historial administrativo
 //
 // Qué hace:
@@ -1333,21 +1381,27 @@ function renderHistorial() {
 
   const inputFecha = document.getElementById("historialFecha");
   const selectPlan = document.getElementById("historialPlan");
+  const selectAuxiliar = document.getElementById("historialAuxiliar");
 
   if (inputFecha && !inputFecha.value) {
     inputFecha.value = fechaHoy;
   }
 
   const fechaFiltro = inputFecha?.value || fechaHoy;
-  const planFiltro = selectPlan?.value || "TODOS";
+const planFiltro = selectPlan?.value || "TODOS";
+const auxiliarFiltro = selectAuxiliar?.value || "TODOS";
 
   const filtrados = registros
-    .filter((r) => fechaRegistro(r) === fechaFiltro)
-    .filter((r) => r.turno === currentTurno)
-    .filter((r) => {
-      if (planFiltro === "TODOS") return true;
-      return r.plan_letra === planFiltro;
-    })
+  .filter((r) => fechaRegistro(r) === fechaFiltro)
+  .filter((r) => r.turno === currentTurno)
+  .filter((r) => {
+    if (planFiltro === "TODOS") return true;
+    return r.plan_letra === planFiltro;
+  })
+  .filter((r) => {
+    if (auxiliarFiltro === "TODOS") return true;
+    return String(r.id_usuario) === String(auxiliarFiltro);
+  })
     .slice()
     .sort((a, b) => {
       const planA = String(a.plan_letra || "");
@@ -1577,9 +1631,8 @@ function crearTarjetaResidente(r) {
   const registro = registroDelResidente(r.id_residente);
   const atendido = !!registro;
 
-  fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${
-    atendido ? "is-done" : "is-pending"
-  }`;
+  fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${atendido ? "is-done" : "is-pending"
+    }`;
 
   const nombre = r.residente_nombre || "Sin nombre";
   const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
@@ -1608,18 +1661,18 @@ function crearTarjetaResidente(r) {
     : "";
 
   const notaVisible = atendido
-  ? ""
-  : r.observacion || "";
+    ? ""
+    : r.observacion || "";
 
   const notaHtml = notaVisible
-  ? `<div class="resident-row-note"><strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
-  : "";
+    ? `<div class="resident-row-note"><strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
+    : "";
 
   const estadoHtml = atendido
     ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
     : "";
 
-    fila.innerHTML = `
+  fila.innerHTML = `
     <div class="resident-row-main">
       <div class="resident-row-title">
         <strong>${escaparTexto(nombre + apellidos)}</strong>
@@ -1674,9 +1727,11 @@ function prepararImpresion() {
 
   const inputFecha = document.getElementById("historialFecha");
   const selectPlan = document.getElementById("historialPlan");
+  const selectAuxiliar = document.getElementById("historialAuxiliar");
 
   const fechaFiltro = inputFecha?.value || fechaHoy;
   const planFiltro = selectPlan?.value || "TODOS";
+  const auxiliarFiltro = selectAuxiliar?.value || "TODOS";
 
   const registrosFiltrados = registros
     .filter((r) => fechaRegistro(r) === fechaFiltro)
@@ -1685,6 +1740,10 @@ function prepararImpresion() {
       if (planFiltro === "TODOS") return true;
       return r.plan_letra === planFiltro;
     })
+    .filter((r) => {
+    if (auxiliarFiltro === "TODOS") return true;
+    return String(r.id_usuario) === String(auxiliarFiltro);
+  })
     .slice()
     .sort((a, b) => {
       const planA = String(a.plan_letra || "");
@@ -1805,9 +1864,9 @@ async function iniciarPlanning() {
     renderBotonesPlanes();
     cargarSelectResidentes();
     render();
-if (typeof actualizarAlarmaPendientes === "function") {
-  setInterval(actualizarAlarmaPendientes, 60000);
-}
+    if (typeof actualizarAlarmaPendientes === "function") {
+      setInterval(actualizarAlarmaPendientes, 60000);
+    }
 
   } catch (error) {
     console.error(error);

@@ -986,9 +986,9 @@ textarea:focus {
   min-width: 460px;
 }
 
-.history-box {
+/*.history-box {
   overflow-x: auto;
-}
+}*/
 
 table {
   width: 100%;
@@ -1994,7 +1994,7 @@ td {
    - Mantiene visibles los filtros de fecha y plan.
    - Solo permite scroll dentro de la tabla de historial.
    - Evita tener que volver arriba para cambiar filtros.
-   ============================================================ */
+   ============================================================ 
 
 .history-box.history-focus-mode .collapsible-content {
   max-height: none;
@@ -2002,7 +2002,7 @@ td {
 }
 
 .history-box .history-actions {
-  position: sticky;
+ position: sticky;
   top: 0;
   z-index: 5;
   background: #ffffff;
@@ -2015,8 +2015,8 @@ td {
   overflow-y: auto;
   overflow-x: auto;
   margin-top: 8px;
-}
-
+} 
+*/
 /* ============================================================
    BLOQUE: Historial con un solo scroll vertical
 
@@ -2025,7 +2025,7 @@ td {
    - Mantiene visible el filtro.
    - Mantiene visible la cabecera de la tabla.
    - Solo los registros hacen scroll.
-   ============================================================ */
+   ============================================================ 
 
 .history-box .collapsible-content,
 .history-box.history-focus-mode .collapsible-content {
@@ -2056,7 +2056,105 @@ td {
   z-index: 9;
   background: #ffffff;
   border-bottom: 2px solid var(--border);
+}*/
+
+/* ============================================================
+   BLOQUE: Historial admin con filtros fuera del scroll
+
+   Qué hace:
+   - El contenedor general del historial no tiene scroll.
+   - Los filtros quedan fuera del scroll.
+   - Solo la tabla tiene scroll vertical y horizontal.
+   - La cabecera de la tabla queda fija.
+   ============================================================ */
+
+#historialBox,
+#historialBox.collapsible-content.open,
+.history-box .collapsible-content,
+.history-box.history-focus-mode .collapsible-content {
+  max-height: none !important;
+  overflow: visible !important;
 }
+
+/* Filtros visibles fuera del scroll */
+.history-box .history-actions {
+  position: relative !important;
+  top: auto !important;
+  z-index: 20 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.history-box .history-actions > label,
+.history-box .history-actions > input,
+.history-box .history-actions > select {
+  width: 100% !important;
+}
+
+/* Solo esta zona hace scroll */
+.history-box .history-table-wrap {
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  margin-top: 0 !important;
+}
+
+/* Cabecera fija dentro del scroll de la tabla */
+#matrixTable thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  background: #f0f6f8 !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+/* PC / tablet: Fecha | Plan | Auxiliar */
+@media (min-width: 700px) {
+  .history-box .history-actions {
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 6px !important;
+  }
+
+  .history-box .history-actions > :nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-box .history-actions > :nth-child(2) {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .history-box .history-actions > :nth-child(3) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-box .history-actions > :nth-child(4) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+
+  .history-box .history-actions > :nth-child(5) {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-box .history-actions > :nth-child(6) {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+  }
+}
+
+
+
+
 /* ============================================================
    BLOQUE: Alineación correcta filtros Mi historial auxiliar
 
@@ -2263,4 +2361,218 @@ td {
   color: #3d2800;
   font-size: 0.68rem;
   font-weight: 900;
+}
+
+/* ============================================================
+   BLOQUE: Filtros historial admin con auxiliar
+
+   Qué hace:
+   - Acomoda Fecha, Plan y Auxiliar.
+   - Mantiene mobile first.
+   - En PC coloca cada filtro alineado.
+   ============================================================ */
+
+.history-actions {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.history-actions > label,
+.history-actions > input,
+.history-actions > select {
+  width: 100% !important;
+}
+
+@media (min-width: 700px) {
+  .history-actions {
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 6px !important;
+  }
+
+  .history-actions > :nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-actions > :nth-child(2) {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .history-actions > :nth-child(3) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-actions > :nth-child(4) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+
+  .history-actions > :nth-child(5) {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+
+  .history-actions > :nth-child(6) {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+  }
+}
+
+/* ============================================================
+   BLOQUE: Historial admin con filtros fuera del scroll
+
+   Qué hace:
+   - Deja los filtros del historial siempre visibles.
+   - El scroll vertical ocurre solo dentro de la tabla.
+   - Mantiene fija la cabecera de la tabla.
+   - Evita doble scroll vertical.
+   ============================================================ */
+
+.history-box .collapsible-content,
+.history-box.history-focus-mode .collapsible-content {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Filtros fuera del scroll */
+.history-box .history-actions {
+  position: relative !important;
+  top: auto !important;
+  z-index: 20 !important;
+  background: #ffffff !important;
+  padding: 10px 12px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* Solo la tabla tiene scroll */
+.history-box .history-table-wrap {
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  margin-top: 0 !important;
+}
+
+/* Cabecera fija dentro del scroll de la tabla */
+#matrixTable thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 15 !important;
+  background: #f0f6f8 !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+/* ============================================================
+   BLOQUE: Historial admin limpio
+
+   Qué hace:
+   - Los filtros quedan fuera del scroll.
+   - Solo la tabla tiene scroll vertical/horizontal.
+   - La cabecera de la tabla queda fija.
+   ============================================================ */
+
+#historialBox {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#historialBox.collapsible-content.open {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.history-box {
+  overflow: visible !important;
+}
+
+.history-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-actions label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.history-actions input,
+.history-actions select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.history-table-wrap {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+#matrixTable {
+  min-width: 720px;
+}
+
+#matrixTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f0f6f8;
+  border-bottom: 2px solid var(--border);
+}
+
+#matrixTable th,
+#matrixTable td {
+  white-space: nowrap;
+}
+
+@media (min-width: 700px) {
+  .history-actions {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 6px;
+  }
+
+  .history-actions > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .history-actions > :nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .history-actions > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .history-actions > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .history-actions > :nth-child(5) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .history-actions > :nth-child(6) {
+    grid-column: 3;
+    grid-row: 2;
+  }
 }
