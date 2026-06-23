@@ -24,11 +24,14 @@
 let currentPlan = "A";
 let currentTurno = "Mañana";
 let viewAllMode = false;
+let gestionAdminActiva = "residentes";
 
 let planes = [];
 let residentes = [];
 let planResidentes = [];
 let registros = [];
+let usuariosSistema = [];
+let auxiliaresPlan = [];
 
 const fechaHoy = new Date().toISOString().split("T")[0];
 
@@ -105,7 +108,68 @@ function getPlanActual() {
   return planes.find((p) => p.letra === currentPlan);
 }
 
+// ============================================================
+// BLOQUE: Asignación auxiliar-plan activa
+//
+// Qué hace:
+// - Busca quién tiene asignado un plan en la fecha actual.
+// - Usa plan + turno + rango de fechas.
+// - Sirve para mostrar responsable y bloquear modificaciones.
+// ============================================================
 
+function asignacionAuxiliarPlanActual(planLetra = currentPlan, turno = currentTurno) {
+  return auxiliaresPlan.find(
+    (a) =>
+      a.plan_letra === planLetra &&
+      a.turno === turno &&
+      a.fecha_inicio_iso <= fechaHoy &&
+      a.fecha_fin_iso >= fechaHoy &&
+      a.activo !== false
+  );
+}
+
+
+// ============================================================
+// BLOQUE: Comprobar permiso operativo del auxiliar
+//
+// Qué hace:
+// - Admin siempre puede visualizar y gestionar.
+// - Auxiliar solo puede registrar si está asignada al plan actual.
+// - Evita colisiones entre auxiliares al registrar.
+// ============================================================
+
+function auxiliarPuedeGestionarPlanActual() {
+  if (esAdmin()) return true;
+
+  const s = sesion();
+  const asignacion = asignacionAuxiliarPlanActual();
+
+  if (!s || !asignacion) return false;
+
+  return Number(asignacion.id_usuario) === Number(s.id_usuario);
+}
+
+
+// ============================================================
+// BLOQUE: Texto visible de responsable del plan
+//
+// Qué hace:
+// - Devuelve el nombre de la auxiliar asignada.
+// - Si no hay asignación, informa "Sin auxiliar asignada".
+// ============================================================
+
+function textoResponsablePlan(planLetra = currentPlan, turno = currentTurno) {
+  const asignacion = asignacionAuxiliarPlanActual(planLetra, turno);
+
+  if (!asignacion) {
+    return "Sin auxiliar asignada";
+  }
+
+  const desde = asignacion.fecha_inicio_iso || "";
+  const hasta = asignacion.fecha_fin_iso || "";
+
+  return `${asignacion.auxiliar_nombre || "Auxiliar"} · ${desde} a ${hasta}`;
+}
 // ============================================================
 // BLOQUE: Filtro de residentes del plan actual
 //
@@ -255,42 +319,8 @@ function registroDelResidente(idResidente) {
   );
 }
 
-// ============================================================
-// BLOQUE: Buscar registro del residente en el plan/turno actual
-//
-// Qué hace:
-// - Comprueba si un residente ya fue atendido hoy.
-// - Usa el turno actual seleccionado.
-// - Se usa para separar pendientes y atendidos.
-// ============================================================
-
-function registroDelResidente(idResidente) {
-  return registros.find(
-    (r) =>
-      Number(r.id_residente) === Number(idResidente) &&
-      fechaRegistro(r) === fechaHoy &&
-      r.turno === currentTurno
-  );
-}
 
 
-// ============================================================
-// BLOQUE: Buscar registro por residente y turno concreto
-//
-// Qué hace:
-// - Comprueba si un residente ya fue atendido hoy en un turno específico.
-// - No depende del turno actual seleccionado.
-// - Se usa para la alarma general del administrador.
-// ============================================================
-
-function registroDelResidentePorDatos(idResidente, turno) {
-  return registros.find(
-    (r) =>
-      Number(r.id_residente) === Number(idResidente) &&
-      fechaRegistro(r) === fechaHoy &&
-      r.turno === turno
-  );
-}
 
 // ============================================================
 // BLOQUE: Comprobar si la alarma de tarde está activa
@@ -345,26 +375,38 @@ function registroDelResidentePorDatos(idResidente, turno) {
 // Qué hace:
 // - Carga planes activos.
 // - Carga residentes activos.
+// - Carga usuarios del sistema.
 // - Carga residentes asignados al Planning.
 // - Carga registros diarios.
-// - Usa la API centralizada de frontend/js/api.js.
+// - Carga asignaciones auxiliar-plan por rango.
 // ============================================================
 
 async function cargarDatos() {
-  const [planesApi, residentesApi, planResidentesApi, registrosApi] =
-    await Promise.all([
-      api.obtenerPlanningPlanes(),
-      api.obtenerResidentes(),
-      api.obtenerPlanningPlanResidentes(),
-      api.obtenerPlanningRegistros()
-    ]);
+  const [
+    planesApi,
+    residentesApi,
+    usuariosApi,
+    planResidentesApi,
+    registrosApi,
+    auxiliaresPlanApi
+  ] = await Promise.all([
+    api.obtenerPlanningPlanes(),
+    api.obtenerResidentes(),
+    api.obtenerUsuarios(),
+    api.obtenerPlanningPlanResidentes(),
+    api.obtenerPlanningRegistros(),
+    api.obtenerPlanningAuxiliaresPlan({
+      fecha: fechaHoy
+    })
+  ]);
 
   planes = planesApi;
   residentes = residentesApi.filter((r) => r.activo !== false);
+  usuariosSistema = usuariosApi.filter((u) => u.activo !== false);
   planResidentes = planResidentesApi;
   registros = registrosApi;
+  auxiliaresPlan = auxiliaresPlanApi;
 }
-
 
 // ============================================================
 // BLOQUE: Preparación inicial de interfaz
@@ -395,8 +437,10 @@ function prepararInterfazPlanning() {
   }
 
   crearSelectorTurnoSiNoExiste();
+  prepararFormularioAuxiliarPlan();
   prepararFormularioAsignacion();
   aplicarPermisosPorRol();
+ 
 
 }
 // ============================================================
@@ -531,12 +575,271 @@ function prepararFormularioAsignacion() {
         🛏️ Residente encamado
       </label>
 
-      <button type="button" onclick="guardarAsignacionPlan()">
-        ASIGNAR AL PLAN
-      </button>
+      <button 
+  type="button" 
+  class="btn-primary-action btn-residente-submit"
+  onclick="guardarAsignacionPlan()"
+>💾
+</button>
     </section>
   `;
 }
+
+// ============================================================
+// BLOQUE: Formulario admin para asignar auxiliar al plan
+//
+// Qué hace:
+// - Crea controles para asignar auxiliar al plan actual.
+// - Usa rango de fechas.
+// - Se muestra solo para admin.
+// ============================================================
+
+// ============================================================
+// BLOQUE: Formulario admin para asignar auxiliar al plan
+//
+// Qué hace:
+// - Crea el contenedor visual de gestión de auxiliares.
+// - Separa el formulario de asignación de la lista de auxiliares.
+// - Mantiene colores y tipografía según la regla visual de la app.
+// ============================================================
+
+function prepararFormularioAuxiliarPlan() {
+  const contenedor = document.getElementById("auxiliarPlanBox");
+
+  if (!contenedor || !esAdmin()) {
+    if (contenedor) contenedor.innerHTML = "";
+    return;
+  }
+
+  contenedor.innerHTML = `
+    <section class="admin-form-panel auxiliar-plan-panel">
+      <h4 class="admin-section-title">Auxiliares del plan</h4>
+
+      <div class="admin-child-panel">
+        <h5>Asignar auxiliar</h5>
+
+        <input type="hidden" id="auxPlanEditId" />
+
+        <div class="auxiliar-plan-form">
+          <div class="form-field">
+  <select id="auxPlanUsuario" aria-label="Asignar auxiliar">
+    <option value="">Asignar auxiliar...</option>
+  </select>
+</div>
+
+          <div class="form-field">
+            <label for="auxPlanFechaInicio">Desde</label>
+            <input id="auxPlanFechaInicio" type="date" value="${fechaHoy}" />
+          </div>
+
+          <div class="form-field">
+            <label for="auxPlanFechaFin">Hasta</label>
+            <input id="auxPlanFechaFin" type="date" value="${fechaHoy}" />
+          </div>
+
+          <button 
+  type="button" 
+  class="btn-icon-primary"
+  onclick="guardarAuxiliarPlan()"
+  title="Guardar asignación"
+  aria-label="Guardar asignación"
+>
+  💾
+</button>
+        </div>
+      </div>
+
+      <div class="admin-child-panel">
+        <h5>Auxiliares asignadas</h5>
+        <div id="auxiliarPlanResumen" class="auxiliar-plan-resumen"></div>
+      </div>
+    </section>
+  `;
+
+  cargarSelectAuxiliaresPlan();
+  renderAuxiliarPlanResumen();
+}
+// ============================================================
+// BLOQUE: Cargar select de auxiliares para plan
+//
+// Qué hace:
+// - Llena el select con usuarios auxiliares activos.
+// - Excluye administradores.
+// ============================================================
+
+function cargarSelectAuxiliaresPlan() {
+  const select = document.getElementById("auxPlanUsuario");
+  if (!select) return;
+
+  select.innerHTML = `<option value="">Seleccionar auxiliar...</option>`;
+
+  usuariosSistema
+    .filter((u) => u.rol !== "admin")
+    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
+    .forEach((u) => {
+      select.innerHTML += `
+        <option value="${u.id_usuario}">
+          ${escaparTexto(u.nombre || "Auxiliar")}
+        </option>
+      `;
+    });
+}
+
+
+// ============================================================
+// BLOQUE: Resumen de auxiliar asignado al plan
+//
+// Qué hace:
+// - Muestra quién tiene el plan actual.
+// - Permite al admin ver el rango vigente.
+// ============================================================
+
+// ============================================================
+// BLOQUE: Lista de auxiliares asignadas
+//
+// Qué hace:
+// - Muestra auxiliares asignadas en la fecha actual.
+// - Filtra por turno actual.
+// - Usa la misma estructura visual que residentes asignados.
+// - Permite quitar asignación.
+// ============================================================
+
+function renderAuxiliarPlanResumen() {
+  const contenedor = document.getElementById("auxiliarPlanResumen");
+  if (!contenedor) return;
+
+  const asignacionesTurno = auxiliaresPlan
+  .filter((a) => a.plan_letra === currentPlan)
+  .filter((a) => a.turno === currentTurno)
+  .filter(
+    (a) =>
+      a.fecha_inicio_iso <= fechaHoy &&
+      a.fecha_fin_iso >= fechaHoy &&
+      a.activo !== false
+  )
+    .slice()
+    .sort((a, b) => {
+      const orden = { A: 1, B: 2, C: 3, D: 4, ALT: 5 };
+      return (orden[a.plan_letra] || 99) - (orden[b.plan_letra] || 99);
+    });
+
+  if (!asignacionesTurno.length) {
+    contenedor.innerHTML = `
+      <p class="admin-empty-text">
+        No hay auxiliares asignadas para ${escaparTexto(etiquetaPlanActual())} · ${escaparTexto(currentTurno)}.
+      </p>
+    `;
+    return;
+  }
+
+  contenedor.innerHTML = asignacionesTurno
+  .map((a, index) => {
+      const planVisible = nombrePlanVisiblePorLetra(a.plan_letra);
+      const auxiliar = a.auxiliar_nombre || "Auxiliar";
+      const rango = `${a.fecha_inicio_iso} → ${a.fecha_fin_iso}`;
+
+      return `
+  <div class="edit-row auxiliar-assigned-row">
+    <span class="row-number">${String(index + 1).padStart(2, "0")}</span>
+
+    <span class="row-info">
+      <strong>${escaparTexto(planVisible)}</strong>
+      <small>${escaparTexto(auxiliar)}</small>
+      <small>${escaparTexto(rango)}</small>
+    </span>
+
+    <div class="edit-actions">
+      <button 
+        type="button" 
+        class="btn-icon-danger"
+        onclick="desactivarAuxiliarPlan(${a.id_asignacion_auxiliar})"
+        title="Eliminar asignación"
+        aria-label="Eliminar asignación"
+      >
+        🗑️
+      </button>
+    </div>
+  </div>
+`;
+    })
+    .join("");
+}
+
+// ============================================================
+// BLOQUE: Guardar asignación auxiliar-plan
+//
+// Qué hace:
+// - Admin asigna una auxiliar al plan actual.
+// - Usa el turno actual y rango de fechas.
+// - Backend valida colisiones por plan + turno + rango.
+// ============================================================
+
+async function guardarAuxiliarPlan() {
+  if (!esAdmin()) return;
+
+  const plan = getPlanActual();
+
+  if (!plan) {
+    alert("No se encontró el plan actual.");
+    return;
+  }
+
+  const idUsuario = document.getElementById("auxPlanUsuario")?.value;
+  const fechaInicio = document.getElementById("auxPlanFechaInicio")?.value;
+  const fechaFin = document.getElementById("auxPlanFechaFin")?.value;
+
+  if (!idUsuario || !fechaInicio || !fechaFin) {
+    alert("Selecciona auxiliar, fecha inicio y fecha fin.");
+    return;
+  }
+
+  if (fechaFin < fechaInicio) {
+    alert("La fecha fin no puede ser anterior a la fecha inicio.");
+    return;
+  }
+
+  try {
+    await api.crearPlanningAuxiliarPlan({
+      id_plan: plan.id_plan,
+      id_usuario: Number(idUsuario),
+      turno: currentTurno,
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin
+    });
+
+    await cargarDatos();
+    render();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "No se pudo asignar la auxiliar al plan.");
+  }
+}
+
+
+// ============================================================
+// BLOQUE: Desactivar asignación auxiliar-plan
+//
+// Qué hace:
+// - Admin retira la asignación vigente.
+// - No borra físicamente la fila.
+// ============================================================
+
+async function desactivarAuxiliarPlan(idAsignacion) {
+  if (!esAdmin()) return;
+
+  const confirmar = confirm("¿Quitar la asignación de auxiliar a este plan?");
+  if (!confirmar) return;
+
+  try {
+    await api.quitarPlanningAuxiliarPlan(idAsignacion);
+    await cargarDatos();
+    render();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "No se pudo quitar la asignación.");
+  }
+}
+
 
 // ============================================================
 // BLOQUE: Cargar select de residentes
@@ -591,7 +894,58 @@ function setPlan(plan) {
   render();
 }
 
+// ============================================================
+// BLOQUE: Cambiar gestión admin activa
+//
+// Qué hace:
+// - Permite alternar entre gestión de residentes y auxiliares.
+// - Oculta el bloque que no corresponde.
+// - Evita saturar visualmente la pantalla del administrador.
+// ============================================================
 
+function setGestionAdmin(tipo) {
+  gestionAdminActiva = tipo;
+
+  const btnResidentes = document.getElementById("btnGestionResidentes");
+  const btnAuxiliares = document.getElementById("btnGestionAuxiliares");
+
+  if (btnResidentes) {
+    btnResidentes.classList.toggle("active", tipo === "residentes");
+  }
+
+  if (btnAuxiliares) {
+    btnAuxiliares.classList.toggle("active", tipo === "auxiliares");
+  }
+
+  aplicarVistaGestionAdmin();
+}
+
+
+// ============================================================
+// BLOQUE: Aplicar vista de gestión admin
+//
+// Qué hace:
+// - Muestra solo el bloque elegido por el administrador.
+// - Residentes: formulario + lista de residentes.
+// - Auxiliares: formulario + lista de auxiliares.
+// ============================================================
+
+function aplicarVistaGestionAdmin() {
+  const boxResidentes = document.getElementById("residentesPlanBox");
+  const boxAuxiliares = document.getElementById("auxiliarPlanBox");
+
+  if (!esAdmin()) return;
+
+  if (boxResidentes) {
+    boxResidentes.style.display =
+      gestionAdminActiva === "residentes" ? "block" : "none";
+  }
+
+  if (boxAuxiliares) {
+    boxAuxiliares.style.display =
+      gestionAdminActiva === "auxiliares" ? "block" : "none";
+  }
+}
 // ============================================================
 // BLOQUE: Render dinámico de botones de planes
 //
@@ -934,6 +1288,10 @@ async function toggleCheck(idResidente) {
     return;
   }
 
+  if (!auxiliarPuedeGestionarPlanActual()) {
+  return;
+}
+
   const plan = getPlanActual();
   const s = sesion();
 
@@ -983,6 +1341,9 @@ async function toggleCheck(idResidente) {
 // ============================================================
 
 function addIncidencia(idResidente) {
+    if (!esAdmin() && !auxiliarPuedeGestionarPlanActual()) {
+    return;
+  }
   const plan = getPlanActual();
   const s = sesion();
 
@@ -1072,8 +1433,12 @@ function toggleMatrixView() {
 
 function render() {
   renderBotonesPlanes();
+  prepararFormularioAuxiliarPlan();
   renderChecklist();
   renderEditList();
+  renderAuxiliarPlanResumen();
+  aplicarVistaGestionAdmin();
+
   cargarFiltroAuxiliaresHistorial();
   renderHistorial();
 
@@ -1150,7 +1515,7 @@ function renderChecklist() {
       return;
     }
 
-    residentesOrdenados.forEach((r) => {
+    residentesOrdenados.forEach((r, index) => {
       const nombre = r.residente_nombre || "Sin nombre";
       const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
 
@@ -1169,15 +1534,17 @@ function renderChecklist() {
         : "";
 
       lista.innerHTML += `
-    <div class="edit-row admin-main-row ${r.riesgo ? "is-risk" : ""} ${estaEnAlarma ? "is-alert-pending" : ""}">
-      <span>
-        <strong>${escaparTexto(nombre + apellidos)}</strong>
-        <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
-        ${riesgoTag}
-        ${alarmaTag}
-      </span>
-    </div>
-  `;
+  <div class="edit-row admin-main-row ${r.riesgo ? "is-risk" : ""} ${estaEnAlarma ? "is-alert-pending" : ""}">
+    <span class="row-number">${String(index + 1).padStart(2, "0")}</span>
+
+    <span class="row-info">
+      <strong>${escaparTexto(nombre + apellidos)}</strong>
+      <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
+      ${riesgoTag}
+      ${alarmaTag}
+    </span>
+  </div>
+`;
     });
 
     return;
@@ -1216,23 +1583,35 @@ function renderChecklist() {
     `
     : "";
 
-  contenedor.innerHTML = `
-    ${bloquePendientes}
-    ${bloqueAtendidos}
-  `;
+  const puedeGestionar = auxiliarPuedeGestionarPlanActual();
+const responsableTexto = textoResponsablePlan();
+
+const estadoPlanHtml = `
+  <section class="plan-responsable-box ${puedeGestionar ? "is-active" : "is-readonly"}">
+    <strong>${escaparTexto(etiquetaPlanActual())} · ${escaparTexto(currentTurno)}</strong>
+    <span>Responsable: ${escaparTexto(responsableTexto)}</span>
+    ${puedeGestionar ? "" : "<small>Solo lectura</small>"}
+  </section>
+`;
+
+contenedor.innerHTML = `
+  ${estadoPlanHtml}
+  ${bloquePendientes}
+  ${bloqueAtendidos}
+`;
 
   const listaPendientes = document.getElementById("listaPendientes");
   const listaAtendidos = document.getElementById("listaAtendidos");
 
   if (listaPendientes) {
     pendientes.forEach((r) => {
-      listaPendientes.appendChild(crearTarjetaResidente(r));
+      listaPendientes.appendChild(crearTarjetaResidente(r, puedeGestionar));
     });
   }
 
   if (listaAtendidos) {
     atendidos.forEach((r) => {
-      listaAtendidos.appendChild(crearTarjetaResidente(r));
+      listaAtendidos.appendChild(crearTarjetaResidente(r, puedeGestionar));
     });
   }
 }
@@ -1291,18 +1670,20 @@ function renderEditList() {
     return;
   }
 
-  residentesPlan.forEach((r) => {
+ residentesPlan.forEach((r, index) => {
     const nombre = r.residente_nombre || "Sin nombre";
     const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
     const riesgoTag = r.riesgo ? ` <span class="admin-risk-tag">Riesgo</span>` : "";
 
     lista.innerHTML += `
       <div class="edit-row ${r.riesgo ? "is-risk" : ""}">
-        <span>
-          <strong>${escaparTexto(nombre + apellidos)}</strong>
-          <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
-          ${riesgoTag}
-        </span>
+  <span class="row-number">${String(index + 1).padStart(2, "0")}</span>
+
+  <span class="row-info">
+    <strong>${escaparTexto(nombre + apellidos)}</strong>
+    <small>Hab. ${escaparTexto(r.habitacion || "-")}</small>
+    ${riesgoTag}
+  </span>
 
         <div class="edit-actions">
           <button type="button" onclick="startEdit(${r.id_plan_residente})">✏️</button>
@@ -1622,17 +2003,18 @@ function prepararImpresionMiHistorial() {
 // - En Pendientes muestra card amplio y legible.
 // - En Pendientes muestra riesgo, pañal, encamado y observación base.
 // - En Atendidos no repite riesgo ni pañal.
-// - En Atendidos solo muestra la nota registrada por la auxiliar.
-// - La nota se muestra como ícono de lápiz.
+// - En Atendidos solo muestra la hora registrada.
+// - Si el plan está en solo lectura, bloquea click y oculta nota.
 // ============================================================
 
-function crearTarjetaResidente(r) {
+function crearTarjetaResidente(r, puedeGestionar = true) {
   const fila = document.createElement("div");
   const registro = registroDelResidente(r.id_residente);
   const atendido = !!registro;
 
-  fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${atendido ? "is-done" : "is-pending"
-    }`;
+  fila.className = `resident-row ${r.riesgo ? "is-risk" : ""} ${
+    atendido ? "is-done" : "is-pending"
+  } ${puedeGestionar ? "" : "is-readonly"}`;
 
   const nombre = r.residente_nombre || "Sin nombre";
   const apellidos = r.residente_apellidos ? ` ${r.residente_apellidos}` : "";
@@ -1660,9 +2042,7 @@ function crearTarjetaResidente(r) {
     ? `<div class="resident-row-detail">${chips.join("")}</div>`
     : "";
 
-  const notaVisible = atendido
-    ? ""
-    : r.observacion || "";
+  const notaVisible = atendido ? "" : r.observacion || "";
 
   const notaHtml = notaVisible
     ? `<div class="resident-row-note"><strong>Nota:</strong> ${escaparTexto(notaVisible)}</div>`
@@ -1670,6 +2050,20 @@ function crearTarjetaResidente(r) {
 
   const estadoHtml = atendido
     ? `<span class="resident-row-time">${escaparTexto(registro?.hora || "✓")}</span>`
+    : "";
+
+  const botonNotaHtml = puedeGestionar
+    ? `
+      <button 
+        type="button" 
+        class="btn-nota-icon" 
+        onclick="addIncidencia(${r.id_residente})"
+        aria-label="Agregar nota"
+        title="Agregar nota"
+      >
+        📝
+      </button>
+    `
     : "";
 
   fila.innerHTML = `
@@ -1685,28 +2079,18 @@ function crearTarjetaResidente(r) {
 
     <div class="resident-row-side">
       ${estadoHtml}
-
-      <button 
-        type="button" 
-        class="btn-nota-icon" 
-        onclick="addIncidencia(${r.id_residente})"
-        aria-label="Agregar nota"
-        title="Agregar nota"
-      >
-        📝
-      </button>
+      ${botonNotaHtml}
     </div>
   `;
 
   fila.addEventListener("click", (event) => {
+    if (!puedeGestionar) return;
     if (event.target.closest("button")) return;
     toggleCheck(r.id_residente);
   });
 
   return fila;
 }
-
-
 // ============================================================
 // BLOQUE: Preparar impresión desde Historial
 //

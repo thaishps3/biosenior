@@ -78,28 +78,69 @@
              ============================================================ -->
 
             <div class="tabs no-print"></div>
-
             <!-- ============================================================
-             BLOQUE: Gestión admin de residentes asignados
+ BLOQUE: Gestión admin del Planning
 
-             Qué hace:
-             - Permite al admin asignar residentes a plan + turno.
-             - El contenido real del formulario lo construye planning/js/script.js.
-             ============================================================ -->
+ Qué hace:
+ - Permite al admin asignar una auxiliar a un plan + turno.
+ - Permite al admin asignar residentes a plan + turno.
+ - El contenido real de los formularios lo construye planning/js/script.js.
+ ============================================================ -->
 
             <div class="collapsible-box no-print">
                 <div class="collapsible-header" onclick="toggleBox('adminBox')">
-                    <span>⚙️ Asignar residentes al plan</span>
+                    <span>⚙️ Gestión del plan</span>
                     <span id="adminBox-arrow">▼</span>
                 </div>
 
                 <div class="collapsible-content" id="adminBox">
-                    <div class="form-box"></div>
-                    <div id="editList"></div>
-                </div>
-            </div>
 
-            <!-- ============================================================
+                    <!-- ============================================================
+     BLOQUE: Selector de gestión admin
+
+     Qué hace:
+     - Permite al admin alternar entre gestión de residentes
+       y gestión de auxiliares.
+     ============================================================ -->
+
+                    <div class="admin-management-tabs">
+                        <button type="button" id="btnGestionResidentes" class="admin-management-tab active"
+                            onclick="setGestionAdmin('residentes')">
+                            Residentes
+                        </button>
+
+                        <button type="button" id="btnGestionAuxiliares" class="admin-management-tab"
+                            onclick="setGestionAdmin('auxiliares')">
+                            Auxiliares
+                        </button>
+                    </div>
+
+                    <!-- ============================================================
+     BLOQUE: Gestión de auxiliares del plan
+
+     Qué hace:
+     - Contiene el formulario para asignar auxiliar.
+     - Contiene la lista de auxiliares asignadas.
+     ============================================================ -->
+
+                    <div id="auxiliarPlanBox" class="admin-parent-box auxiliar-plan-box"></div>
+
+                    <!-- ============================================================
+     BLOQUE: Gestión de residentes del plan
+
+     Qué hace:
+     - Contiene el formulario para asignar residentes.
+     - Contiene la lista de residentes asignados.
+     ============================================================ -->
+
+                    <div id="residentesPlanBox" class="admin-parent-box residentes-plan-box">
+                        <div class="form-box"></div>
+                        <div id="editList"></div>
+                    </div>
+
+                </div>
+
+                <!-- ============================================================
              BLOQUE: Checklist principal
 
              Qué hace:
@@ -108,9 +149,9 @@
              - El contenido se renderiza desde planning/js/script.js.
              ============================================================ -->
 
-            <div id="checklist" class="no-print"></div>
+                <div id="checklist" class="no-print"></div>
 
-            <!-- ============================================================
+                <!-- ============================================================
              BLOQUE: Mi historial auxiliar
 
              Qué hace:
@@ -120,57 +161,57 @@
              - No muestra residentes, habitaciones ni incidencias.
              ============================================================ -->
 
-            <div class="mi-history-box no-print" id="miHistorialBoxWrapper">
-                <div class="mi-history-header" onclick="toggleBox('miHistorialBox')">
-                    <span>📋 MI HISTORIAL</span>
-                    <span id="miHistorialBox-arrow">▼</span>
+                <div class="mi-history-box no-print" id="miHistorialBoxWrapper">
+                    <div class="mi-history-header" onclick="toggleBox('miHistorialBox')">
+                        <span>📋 MI HISTORIAL</span>
+                        <span id="miHistorialBox-arrow">▼</span>
+                    </div>
+
+                    <div class="collapsible-content" id="miHistorialBox">
+                        <div class="mi-history-actions">
+                            <label for="miHistorialFecha">Fecha</label>
+                            <input id="miHistorialFecha" type="date" onchange="renderMiHistorialAuxiliar()" />
+
+                            <label for="miHistorialTurno">Turno</label>
+                            <select id="miHistorialTurno" onchange="renderMiHistorialAuxiliar()">
+                                <option value="TODOS">Todos</option>
+                                <option value="Mañana">Mañana</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noche">Noche</option>
+                            </select>
+
+                            <label for="miHistorialPlan">Plan</label>
+                            <select id="miHistorialPlan" onchange="renderMiHistorialAuxiliar()">
+                                <option value="TODOS">Todos</option>
+                                <option value="A">Plan A</option>
+                                <option value="B">Plan B</option>
+                                <option value="C">Plan C</option>
+                                <option value="D">Plan D</option>
+                                <option value="ALT">Alterno</option>
+                            </select>
+                        </div>
+
+                        <div class="mi-history-print-action">
+                            <button class="btn-mi-report" type="button" onclick="prepararImpresionMiHistorial()">
+                                🖨️ IMPRIMIR MI HISTORIAL
+                            </button>
+                        </div>
+
+                        <div class="mi-history-table-wrap">
+                            <table id="miHistorialTable">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Turno</th>
+                                        <th>Plan</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="collapsible-content" id="miHistorialBox">
-                    <div class="mi-history-actions">
-                        <label for="miHistorialFecha">Fecha</label>
-                        <input id="miHistorialFecha" type="date" onchange="renderMiHistorialAuxiliar()" />
-
-                        <label for="miHistorialTurno">Turno</label>
-                        <select id="miHistorialTurno" onchange="renderMiHistorialAuxiliar()">
-                            <option value="TODOS">Todos</option>
-                            <option value="Mañana">Mañana</option>
-                            <option value="Tarde">Tarde</option>
-                            <option value="Noche">Noche</option>
-                        </select>
-
-                        <label for="miHistorialPlan">Plan</label>
-                        <select id="miHistorialPlan" onchange="renderMiHistorialAuxiliar()">
-                            <option value="TODOS">Todos</option>
-                            <option value="A">Plan A</option>
-                            <option value="B">Plan B</option>
-                            <option value="C">Plan C</option>
-                            <option value="D">Plan D</option>
-                            <option value="ALT">Alterno</option>
-                        </select>
-                    </div>
-
-                    <div class="mi-history-print-action">
-                        <button class="btn-mi-report" type="button" onclick="prepararImpresionMiHistorial()">
-                            🖨️ IMPRIMIR MI HISTORIAL
-                        </button>
-                    </div>
-
-                    <div class="mi-history-table-wrap">
-                        <table id="miHistorialTable">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Turno</th>
-                                    <th>Plan</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <!-- ============================================================
+                <!-- ============================================================
      BLOQUE: Historial administrativo
 
      Qué hace:
@@ -180,55 +221,61 @@
      - Solo la tabla de registros tiene scroll.
      ============================================================ -->
 
-<div class="history-box no-print">
-    <div class="history-header" onclick="toggleBox('historialBox')">
-        <span>📋 HISTORIAL</span>
-        <span id="historialBox-arrow">▼</span>
-    </div>
+                <div class="history-box no-print">
+                    <div class="history-header" onclick="toggleBox('historialBox')">
+                        <span>📋 HISTORIAL</span>
+                        <span id="historialBox-arrow">▼</span>
+                    </div>
 
-    <div class="collapsible-content" id="historialBox">
+                    <div class="collapsible-content" id="historialBox">
 
-        <div class="history-actions">
-            <label for="historialFecha">Fecha</label>
-            <input id="historialFecha" type="date" onchange="renderHistorial()" />
+                        <div class="history-actions">
+                            <label for="historialFecha">Fecha</label>
+                            <input id="historialFecha" type="date" onchange="renderHistorial()" />
 
-            <label for="historialPlan">Plan</label>
-            <select id="historialPlan" onchange="renderHistorial()">
-                <option value="TODOS">Todos</option>
-                <option value="A">Plan A</option>
-                <option value="B">Plan B</option>
-                <option value="C">Plan C</option>
-                <option value="D">Plan D</option>
-                <option value="ALT">Alterno</option>
-            </select>
+                            <label for="historialPlan">Plan</label>
+                            <select id="historialPlan" onchange="renderHistorial()">
+                                <option value="TODOS">Todos</option>
+                                <option value="A">Plan A</option>
+                                <option value="B">Plan B</option>
+                                <option value="C">Plan C</option>
+                                <option value="D">Plan D</option>
+                                <option value="ALT">Alterno</option>
+                            </select>
 
-            <label for="historialAuxiliar">Auxiliar</label>
-            <select id="historialAuxiliar" onchange="renderHistorial()">
-                <option value="TODOS">Todas</option>
-            </select>
-        </div>
+                            <label for="historialAuxiliar">Auxiliar</label>
+                            <select id="historialAuxiliar" onchange="renderHistorial()">
+                                <option value="TODOS">Todas</option>
+                            </select>
+                        </div>
 
-        <div class="history-table-wrap">
-            <table id="matrixTable">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Plan</th>
-                        <th>Hab.</th>
-                        <th>Residente</th>
-                        <th>Auxiliar</th>
-                        <th>Incidencia</th>
-                    </tr>
-                </thead>
+                         <div class="report-section no-print">
+                    <button class="btn-report" type="button" onclick="prepararImpresion()">
+                        🖨️ IMPRIMIR HISTORIAL
+                    </button>
+                </div>
 
-                <tbody></tbody>
-            </table>
-        </div>
+                        <div class="history-table-wrap">
+                            <table id="matrixTable">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Plan</th>
+                                        <th>Hab.</th>
+                                        <th>Residente</th>
+                                        <th>Auxiliar</th>
+                                        <th>Incidencia</th>
+                                    </tr>
+                                </thead>
 
-    </div>
-</div>
-        <!-- ============================================================
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ============================================================
              BLOQUE: Reporte imprimible
 
              Qué hace:
@@ -236,29 +283,25 @@
              - El área #printArea solo se muestra al imprimir.
              ============================================================ -->
 
-        <div class="report-section no-print">
-            <button class="btn-report" type="button" onclick="prepararImpresion()">
-                🖨️ GENERAR REPORTE
-            </button>
-        </div>
+               
 
-        <div id="printArea" class="only-print"></div>
+                <div id="printArea" class="only-print"></div>
 
-        <!-- ============================================================
+                <!-- ============================================================
              BLOQUE: Pie del módulo
 
              Qué hace:
              - Muestra créditos funcionales del proyecto.
              ============================================================ -->
 
-        <div class="footer no-print">
-            Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: chatGPT Plus &nbsp;·&nbsp;
+                <div class="footer no-print">
+                    Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: chatGPT Plus &nbsp;·&nbsp;
+                </div>
+
+            </div>
         </div>
 
-    </div>
-    </div>
-
-    <!-- ============================================================
+        <!-- ============================================================
      BLOQUE: Scripts del módulo
 
      Qué hace:
@@ -267,9 +310,9 @@
      - planning/js/script.js renderiza y gestiona Planning.
      ============================================================ -->
 
-    <script src="js/auth.js"></script>
-    <script src="js/api.js"></script>
-    <script src="planning/js/script.js"></script>
+        <script src="js/auth.js"></script>
+        <script src="js/api.js"></script>
+        <script src="planning/js/script.js"></script>
 </body>
 
 </html>

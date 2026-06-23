@@ -264,6 +264,190 @@ async function crearAsignacionTurno(req, res) {
 }
 
 // ============================================================
+// BLOQUE: Listar asignaciones auxiliar-plan por rango
+//
+// Qué hace:
+// - Devuelve qué auxiliar tiene asignado cada plan.
+// - Permite filtrar por fecha y turno desde query params.
+// - Usa planning_auxiliares_plan.
+// ============================================================
+
+async function listarAuxiliaresPlan(req, res) {
+  try {
+    const { fecha, turno } = req.query;
+
+    if (turno && !esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    const asignaciones = await PlanningModel.obtenerAuxiliaresPlan({
+      fecha: fecha || null,
+      turno: turno || null
+    });
+
+    res.json(asignaciones);
+  } catch (error) {
+    console.error("Error al obtener auxiliares asignados a planes:", error);
+    res.status(500).json({
+      mensaje: "Error al obtener auxiliares asignados a planes"
+    });
+  }
+}
+
+
+// ============================================================
+// BLOQUE: Crear asignación auxiliar-plan por rango
+//
+// Qué hace:
+// - Asigna una auxiliar a un plan durante un rango de fechas.
+// - Valida plan, usuario, turno, fecha inicio y fecha fin.
+// - El modelo valida colisiones de fecha.
+// ============================================================
+
+async function crearAuxiliarPlan(req, res) {
+  try {
+    const {
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin
+    } = req.body;
+
+    if (!id_plan || !id_usuario || !turno || !fecha_inicio || !fecha_fin) {
+      return res.status(400).json({
+        mensaje: "Plan, auxiliar, turno, fecha inicio y fecha fin son obligatorios"
+      });
+    }
+
+    if (!esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    if (fecha_fin < fecha_inicio) {
+      return res.status(400).json({
+        mensaje: "La fecha fin no puede ser anterior a la fecha inicio"
+      });
+    }
+
+    const asignacion = await PlanningModel.crearAuxiliarPlan(req.body);
+    res.status(201).json(asignacion);
+  } catch (error) {
+    console.error("Error al crear asignación auxiliar-plan:", error);
+
+    if (error.codigo === "COLISION_AUXILIAR_PLAN") {
+      return res.status(409).json({
+        mensaje: error.message
+      });
+    }
+
+    res.status(500).json({
+      mensaje: "Error al crear asignación auxiliar-plan"
+    });
+  }
+}
+
+
+// ============================================================
+// BLOQUE: Actualizar asignación auxiliar-plan
+//
+// Qué hace:
+// - Permite editar auxiliar, plan, turno o rango de fechas.
+// - Valida datos mínimos.
+// - El modelo evita solapamientos con otras asignaciones activas.
+// ============================================================
+
+async function actualizarAuxiliarPlan(req, res) {
+  try {
+    const {
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin
+    } = req.body;
+
+    if (!id_plan || !id_usuario || !turno || !fecha_inicio || !fecha_fin) {
+      return res.status(400).json({
+        mensaje: "Plan, auxiliar, turno, fecha inicio y fecha fin son obligatorios"
+      });
+    }
+
+    if (!esTurnoValido(turno)) {
+      return res.status(400).json({
+        mensaje: "Turno no válido. Use Mañana, Tarde o Noche."
+      });
+    }
+
+    if (fecha_fin < fecha_inicio) {
+      return res.status(400).json({
+        mensaje: "La fecha fin no puede ser anterior a la fecha inicio"
+      });
+    }
+
+    const asignacion = await PlanningModel.actualizarAuxiliarPlan(
+      req.params.id,
+      req.body
+    );
+
+    if (!asignacion) {
+      return res.status(404).json({
+        mensaje: "Asignación auxiliar-plan no encontrada"
+      });
+    }
+
+    res.json(asignacion);
+  } catch (error) {
+    console.error("Error al actualizar asignación auxiliar-plan:", error);
+
+    if (error.codigo === "COLISION_AUXILIAR_PLAN") {
+      return res.status(409).json({
+        mensaje: error.message
+      });
+    }
+
+    res.status(500).json({
+      mensaje: "Error al actualizar asignación auxiliar-plan"
+    });
+  }
+}
+
+
+// ============================================================
+// BLOQUE: Desactivar asignación auxiliar-plan
+//
+// Qué hace:
+// - No borra físicamente la asignación.
+// - Marca activo = false.
+// - Conserva trazabilidad.
+// ============================================================
+
+async function desactivarAuxiliarPlan(req, res) {
+  try {
+    const asignacion = await PlanningModel.desactivarAuxiliarPlan(req.params.id);
+
+    if (!asignacion) {
+      return res.status(404).json({
+        mensaje: "Asignación auxiliar-plan no encontrada"
+      });
+    }
+
+    res.json({
+      mensaje: "Asignación auxiliar-plan desactivada correctamente",
+      asignacion
+    });
+  } catch (error) {
+    console.error("Error al desactivar asignación auxiliar-plan:", error);
+    res.status(500).json({
+      mensaje: "Error al desactivar asignación auxiliar-plan"
+    });
+  }
+}
+// ============================================================
 // BLOQUE: Listar registros diarios del Planning
 //
 // Qué hace:
@@ -402,8 +586,15 @@ module.exports = {
   asignarResidenteAPlan,
   actualizarPlanResidente,
   quitarResidenteDePlan,
+
   listarAsignacionesTurno,
   crearAsignacionTurno,
+
+  listarAuxiliaresPlan,
+  crearAuxiliarPlan,
+  actualizarAuxiliarPlan,
+  desactivarAuxiliarPlan,
+
   listarRegistros,
   crearRegistro,
   actualizarRegistro,

@@ -20,29 +20,79 @@
    ============================================================ */
 
 :root {
-  --primary: #0f7b8c;
-  --primary-dk: #0a5f6e;
-  --primary-lt: #e0f4f7;
+  /* ============================================================
+     Sistema visual base BioSenior
+     ============================================================ */
 
-  --success: #2e7d5e;
-  --success-lt: #e8f5ef;
+  /* Color principal */
+  --primary: #0f5f66;
+  --primary-dark: #0b4449;
+  --primary-soft: #e6f3f4;
 
-  --warning: #d4860b;
-  --warning-lt: #fef3e0;
+  /* Fondos */
+  --background: #f3f6f7;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
 
-  --danger: #c0392b;
-  --danger-lt: #fdecea;
+  /* Texto */
+  --text: #1f2933;
+  --muted: #64748b;
+  --text-inverse: #ffffff;
 
-  --bg: #f0f4f7;
-  --card: #ffffff;
-  --text: #1a2e35;
-  --muted: #5a7a84;
-  --border: #c9dde2;
+  /* Bordes y sombras */
+  --border: #d8e2e4;
+  --shadow-soft: 0 4px 14px rgba(15, 95, 102, 0.08);
 
-  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.06);
+  /* Estados */
+  --success: #2f855a;
+  --success-soft: #e8f5ee;
+
+  --warning: #f59e0b;
+  --warning-soft: #fff7e6;
+
+  --danger: #b91c1c;
+  --danger-soft: #fdecec;
+
+  --readonly: #94a3b8;
+  --readonly-soft: #f1f5f9;
+
+  /* Tipografía */
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --fs-xs: 0.72rem;
+  --fs-sm: 0.82rem;
+  --fs-md: 0.94rem;
+  --fs-lg: 1.08rem;
+  --fs-xl: 1.35rem;
+
+  --fw-normal: 400;
+  --fw-medium: 600;
+  --fw-bold: 800;
+  --fw-heavy: 900;
+
+  /* Radios */
   --radius-sm: 9px;
   --radius-md: 12px;
   --radius-lg: 14px;
+
+  /* ============================================================
+     Alias temporales
+     
+     Qué hacen:
+     - Mantienen funcionando el CSS antiguo mientras limpiamos.
+     - Luego podremos eliminar estos alias cuando todo use
+       los nombres nuevos.
+     ============================================================ */
+
+  --primary-dk: var(--primary-dark);
+  --primary-lt: var(--primary-soft);
+
+  --success-lt: var(--success-soft);
+  --warning-lt: var(--warning-soft);
+  --danger-lt: var(--danger-soft);
+
+  --bg: var(--background);
+  --card: var(--surface);
 }
 
 
@@ -62,12 +112,12 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg);
+  font-family: var(--font-main);
+  background: var(--background);
   color: var(--text);
   min-height: 100vh;
   font-size: 16px;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 button,
@@ -76,6 +126,17 @@ select,
 textarea,
 table {
   font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--primary);
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
 }
 
 button {
@@ -2575,4 +2636,390 @@ td {
     grid-column: 3;
     grid-row: 2;
   }
+}
+
+/* ============================================================
+   BLOQUE: Selector de gestión admin
+
+   Qué hace:
+   - Crea botones para alternar entre Residentes y Auxiliares.
+   - Mantiene una vista limpia para el administrador.
+   ============================================================ */
+
+.admin-management-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.admin-management-tab {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-management-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* ============================================================
+   BLOQUE: Ajuste selector Gestión del plan
+
+   Qué hace:
+   - Separa los botones Residentes/Auxiliares del encabezado.
+   - Evita que la vista admin se vea apretada.
+   ============================================================ */
+
+#adminBox .admin-management-tabs {
+  margin-top: 12px;
+  margin-bottom: 18px;
+  padding-top: 4px;
+}
+
+
+/* ============================================================
+   BLOQUE: Pie de página limpio
+
+   Qué hace:
+   - Quita fondo o caja visual innecesaria del footer.
+   - Deja el pie discreto y separado del contenido principal.
+   ============================================================ */
+
+.footer {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  padding: 12px 8px;
+  margin-top: 20px;
+  color: var(--muted);
+}
+
+/* ============================================================
+   BLOQUE: Ajuste selector Gestión del plan
+
+   Qué hace:
+   - Separa los botones Residentes/Auxiliares del encabezado.
+   - Evita que la vista admin se vea apretada.
+   ============================================================ */
+
+#adminBox .admin-management-tabs {
+  margin-top: 12px;
+  margin-bottom: 18px;
+  padding-top: 4px;
+}
+
+/* ============================================================
+   BLOQUE: Gestión de auxiliares - formulario y lista uniforme
+
+   Qué hace:
+   - Separa correctamente auxiliar, fecha inicio y fecha fin.
+   - Aplica la regla visual a los botones.
+   - Hace que la lista de auxiliares se vea como la lista
+     de residentes asignados.
+   ============================================================ */
+
+/* Contenedor interno para separar formulario y lista */
+.admin-child-panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.admin-child-panel h5 {
+  margin: 0 0 12px;
+  color: var(--primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+}
+
+/* Formulario de asignación de auxiliar */
+.auxiliar-plan-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auxiliar-plan-form .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.auxiliar-plan-form label {
+  color: var(--primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.auxiliar-plan-form select,
+.auxiliar-plan-form input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  font-size: var(--fs-md);
+}
+
+/* Botón principal: guardar, asignar, confirmar */
+.btn-primary-action {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  cursor: pointer;
+}
+
+/* Botón peligro: quitar, eliminar */
+.btn-danger-action {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  cursor: pointer;
+}
+
+/* Lista de auxiliares con patrón visual tipo residentes asignados */
+.auxiliar-assigned-row {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auxiliar-assigned-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auxiliar-assigned-row strong {
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+}
+
+.auxiliar-assigned-row small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+/* ============================================================
+   BLOQUE: Formulario auxiliar en escritorio
+
+   Qué hace:
+   - En PC coloca auxiliar, fechas y guardar en una sola línea.
+   - Mantiene proporción visual.
+   - Evita que el botón de guardar quede corto o aislado.
+   ============================================================ */
+
+@media (min-width: 700px) {
+  .auxiliar-plan-form {
+    grid-template-columns: 1.6fr 1fr 1fr 56px;
+    align-items: end;
+    column-gap: 12px;
+  }
+
+  .auxiliar-plan-form .btn-icon-primary {
+    width: 56px;
+    height: 40px;
+  }
+}
+
+/* ============================================================
+   BLOQUE: Botones principales dentro de Gestión del plan
+
+   Qué hace:
+   - Unifica ASIGNAR AUXILIAR y ASIGNAR AL PLAN.
+   - Gana prioridad sobre reglas antiguas de .admin-form-panel button.
+   - Añade margen superior al botón de asignar residente.
+   ============================================================ */
+
+#adminBox .btn-primary-action {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  cursor: pointer;
+}
+
+#adminBox .btn-residente-submit {
+  margin-top: 14px;
+}
+
+/* ============================================================
+   BLOQUE: Botón icono principal
+
+   Qué hace:
+   - Usa icono para acciones principales repetitivas.
+   - Mantiene color principal de la app.
+   - Reduce texto visible en formularios operativos.
+   ============================================================ */
+
+.btn-icon-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: 1.05rem;
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-icon-primary:hover {
+  background: var(--primary-dark);
+}
+
+/* Ajuste específico del formulario de auxiliar */
+.auxiliar-plan-form .btn-icon-primary {
+  width: 100%;
+}
+
+/* ============================================================
+   BLOQUE: Numeración de filas asignadas
+
+   Qué hace:
+   - Añade número consecutivo a residentes y auxiliares.
+   - Permite visualizar rápido cuántos elementos hay.
+   - Reutiliza el mismo patrón en listas admin.
+   ============================================================ */
+
+.row-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-info strong,
+.row-info small {
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   BLOQUE: Numeración en listas admin
+
+   Qué hace:
+   - Aplica número consecutivo a:
+     1. Lista principal del admin.
+     2. Residentes asignados dentro de Gestión del plan.
+     3. Auxiliares asignadas.
+   - Mantiene el contenido alineado y legible.
+   ============================================================ */
+
+#adminMainResidentRows .edit-row,
+#editList .edit-row,
+#auxiliarPlanResumen .edit-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   BLOQUE: Botón imprimir dentro de Historial
+
+   Qué hace:
+   - Coloca el botón de impresión dentro del historial.
+   - Usa color principal según regla visual.
+   - Mantiene separación respecto a filtros y tabla.
+   ============================================================ */
+
+.history-print-action {
+  width: 100%;
+  margin: 12px 0;
+}
+
+.history-print-action .btn-report {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  cursor: pointer;
+}
+
+.history-print-action .btn-report:hover {
+  background: var(--primary-dark);
+}
+
+/* ============================================================
+   BLOQUE: Selector Residentes / Auxiliares
+
+   Qué hace:
+   - Aplica la regla visual de botones.
+   - Evita aspecto gris apagado.
+   - Marca claramente la pestaña activa.
+   ============================================================ */
+
+.admin-management-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+
+.admin-management-tab {
+  min-height: 42px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  cursor: pointer;
+}
+
+.admin-management-tab.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
 }

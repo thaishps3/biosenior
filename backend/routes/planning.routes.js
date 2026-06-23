@@ -50,6 +50,20 @@ router.get("/asignaciones", PlanningController.listarAsignacionesTurno);
 router.post("/asignaciones", PlanningController.crearAsignacionTurno);
 
 // ============================================================
+// BLOQUE: Asignaciones de auxiliares a planes por rango
+//
+// Qué hace:
+// - Lista qué auxiliar tiene asignado cada plan.
+// - Permite asignar auxiliar a plan por rango de fechas.
+// - Permite editar o desactivar asignaciones.
+// - Evita colisiones desde el backend.
+// ============================================================
+
+router.get("/auxiliares-plan", PlanningController.listarAuxiliaresPlan);
+router.post("/auxiliares-plan", PlanningController.crearAuxiliarPlan);
+router.put("/auxiliares-plan/:id", PlanningController.actualizarAuxiliarPlan);
+router.delete("/auxiliares-plan/:id", PlanningController.desactivarAuxiliarPlan);
+// ============================================================
 // BLOQUE: Registros diarios
 //
 // Qué hace:

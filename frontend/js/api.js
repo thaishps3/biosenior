@@ -262,6 +262,32 @@ const api = {
     return apiPost("/planning/asignaciones", datos);
   },
 
+    // ============================================================
+  // BLOQUE: Planning - auxiliares asignados a planes por rango
+  //
+  // Qué hace:
+  // - Gestiona qué auxiliar tiene asignado cada plan.
+  // - Usa rango de fechas: fecha_inicio y fecha_fin.
+  // - Permite filtrar por fecha y turno.
+  // - Sirve para bloquear edición a auxiliares no asignados.
+  // ============================================================
+
+  obtenerPlanningAuxiliaresPlan(filtros = {}) {
+    const queryParams = construirQueryParams(filtros);
+    return apiGet(`/planning/auxiliares-plan${queryParams}`);
+  },
+
+  crearPlanningAuxiliarPlan(datos) {
+    return apiPost("/planning/auxiliares-plan", datos);
+  },
+
+  editarPlanningAuxiliarPlan(id, datos) {
+    return apiPut(`/planning/auxiliares-plan/${id}`, datos);
+  },
+
+  quitarPlanningAuxiliarPlan(id) {
+    return apiDelete(`/planning/auxiliares-plan/${id}`);
+  },
   // ============================================================
   // BLOQUE: Planning - registros diarios
   //

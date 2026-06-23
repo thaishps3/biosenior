@@ -374,6 +374,271 @@ async function crearAsignacionTurno(datos) {
 }
 
 // ============================================================
+// BLOQUE: Asignaciones de auxiliares a planes por rango de fechas
+//
+// Qué hace:
+// - Devuelve asignaciones activas de auxiliar a plan.
+// - Usa rango de fechas: fecha_inicio y fecha_fin.
+// - Permite saber qué auxiliar ejecuta cada plan en una fecha/turno.
+// - No modifica residentes ni registros.
+// ============================================================
+
+async function obtenerAuxiliaresPlan(filtros = {}) {
+  const { fecha, turno } = filtros;
+
+  const condiciones = ["pap.activo = TRUE"];
+  const valores = [];
+
+  if (fecha) {
+    valores.push(fecha);
+    condiciones.push(`
+      pap.fecha_inicio <= $${valores.length}
+      AND pap.fecha_fin >= $${valores.length}
+    `);
+  }
+
+  if (turno) {
+    valores.push(turno);
+    condiciones.push(`pap.turno = $${valores.length}`);
+  }
+
+  const resultado = await pool.query(
+    `
+    SELECT
+      pap.id_asignacion_auxiliar,
+      pap.id_plan,
+      pp.letra AS plan_letra,
+      pp.nombre AS plan_nombre,
+      pap.id_usuario,
+      u.nombre AS auxiliar_nombre,
+      pap.turno,
+      pap.fecha_inicio,
+      TO_CHAR(pap.fecha_inicio, 'YYYY-MM-DD') AS fecha_inicio_iso,
+      pap.fecha_fin,
+      TO_CHAR(pap.fecha_fin, 'YYYY-MM-DD') AS fecha_fin_iso,
+      pap.activo,
+      pap.creado_en
+    FROM planning_auxiliares_plan pap
+    INNER JOIN planning_planes pp
+      ON pap.id_plan = pp.id_plan
+    INNER JOIN usuarios_sistema u
+      ON pap.id_usuario = u.id_usuario
+    WHERE ${condiciones.join(" AND ")}
+    ORDER BY
+      pap.fecha_inicio DESC,
+      ${ORDEN_TURNOS_SQL.replaceAll("turno", "pap.turno")} ASC,
+      ${ORDEN_PLANES_SQL.replaceAll("letra", "pp.letra")} ASC,
+      u.nombre ASC
+    `,
+    valores
+  );
+
+  return resultado.rows;
+}
+
+
+// ============================================================
+// BLOQUE: Buscar colisión de auxiliar asignado a plan
+//
+// Qué hace:
+// - Detecta si ya existe una asignación activa para el mismo
+//   plan + turno con fechas solapadas.
+// - Evita que dos auxiliares queden asignados al mismo plan
+//   durante el mismo rango.
+// ============================================================
+
+async function buscarColisionAuxiliarPlan(datos) {
+  const {
+    id_plan,
+    turno,
+    fecha_inicio,
+    fecha_fin,
+    id_asignacion_auxiliar
+  } = datos;
+
+  const valores = [
+    id_plan,
+    turno,
+    fecha_inicio,
+    fecha_fin
+  ];
+
+  let condicionExcluir = "";
+
+  if (id_asignacion_auxiliar) {
+    valores.push(id_asignacion_auxiliar);
+    condicionExcluir = `AND id_asignacion_auxiliar <> $${valores.length}`;
+  }
+
+  const resultado = await pool.query(
+    `
+    SELECT
+      id_asignacion_auxiliar,
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin
+    FROM planning_auxiliares_plan
+    WHERE activo = TRUE
+      AND id_plan = $1
+      AND turno = $2
+      AND fecha_inicio <= $4
+      AND fecha_fin >= $3
+      ${condicionExcluir}
+    LIMIT 1
+    `,
+    valores
+  );
+
+  return resultado.rows[0];
+}
+
+
+// ============================================================
+// BLOQUE: Crear asignación auxiliar-plan
+//
+// Qué hace:
+// - Asigna un auxiliar a un plan durante un rango de fechas.
+// - Valida colisión antes de insertar.
+// - Si hay solapamiento, lanza error controlado.
+// ============================================================
+
+async function crearAuxiliarPlan(datos) {
+  const {
+    id_plan,
+    id_usuario,
+    turno,
+    fecha_inicio,
+    fecha_fin
+  } = datos;
+
+  const colision = await buscarColisionAuxiliarPlan({
+    id_plan,
+    turno,
+    fecha_inicio,
+    fecha_fin
+  });
+
+  if (colision) {
+    const error = new Error(
+      "Ya existe una auxiliar asignada a este plan, turno y rango de fechas."
+    );
+    error.codigo = "COLISION_AUXILIAR_PLAN";
+    throw error;
+  }
+
+  const resultado = await pool.query(
+    `
+    INSERT INTO planning_auxiliares_plan (
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin
+    )
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
+    `,
+    [
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin
+    ]
+  );
+
+  return resultado.rows[0];
+}
+
+
+// ============================================================
+// BLOQUE: Actualizar asignación auxiliar-plan
+//
+// Qué hace:
+// - Permite cambiar auxiliar, turno o rango de fechas.
+// - Valida que no se solape con otra asignación activa.
+// ============================================================
+
+async function actualizarAuxiliarPlan(id, datos) {
+  const {
+    id_plan,
+    id_usuario,
+    turno,
+    fecha_inicio,
+    fecha_fin,
+    activo
+  } = datos;
+
+  const colision = await buscarColisionAuxiliarPlan({
+    id_plan,
+    turno,
+    fecha_inicio,
+    fecha_fin,
+    id_asignacion_auxiliar: id
+  });
+
+  if (colision) {
+    const error = new Error(
+      "Ya existe una auxiliar asignada a este plan, turno y rango de fechas."
+    );
+    error.codigo = "COLISION_AUXILIAR_PLAN";
+    throw error;
+  }
+
+  const resultado = await pool.query(
+    `
+    UPDATE planning_auxiliares_plan
+    SET
+      id_plan = $1,
+      id_usuario = $2,
+      turno = $3,
+      fecha_inicio = $4,
+      fecha_fin = $5,
+      activo = $6
+    WHERE id_asignacion_auxiliar = $7
+    RETURNING *
+    `,
+    [
+      id_plan,
+      id_usuario,
+      turno,
+      fecha_inicio,
+      fecha_fin,
+      activo !== undefined ? activo : true,
+      id
+    ]
+  );
+
+  return resultado.rows[0];
+}
+
+
+// ============================================================
+// BLOQUE: Desactivar asignación auxiliar-plan
+//
+// Qué hace:
+// - No borra físicamente.
+// - Marca activo = FALSE.
+// - Conserva trazabilidad de asignaciones anteriores.
+// ============================================================
+
+async function desactivarAuxiliarPlan(id) {
+  const resultado = await pool.query(
+    `
+    UPDATE planning_auxiliares_plan
+    SET activo = FALSE
+    WHERE id_asignacion_auxiliar = $1
+    RETURNING *
+    `,
+    [id]
+  );
+
+  return resultado.rows[0];
+}
+
+// ============================================================
 // BLOQUE: Registros diarios del Planning
 //
 // Qué hace:
@@ -549,8 +814,15 @@ module.exports = {
   asignarResidenteAPlan,
   actualizarPlanResidente,
   quitarResidenteDePlan,
+
   obtenerAsignacionesTurno,
   crearAsignacionTurno,
+
+  obtenerAuxiliaresPlan,
+  crearAuxiliarPlan,
+  actualizarAuxiliarPlan,
+  desactivarAuxiliarPlan,
+
   obtenerRegistros,
   crearRegistro,
   actualizarRegistro,
